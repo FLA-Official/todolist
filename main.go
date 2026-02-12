@@ -1,5 +1,7 @@
 package main
 
-func main() {
+import "todolist/cmd"
 
+func main() {
+	cmd.Serve()
 }

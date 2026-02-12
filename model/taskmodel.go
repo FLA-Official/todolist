@@ -9,7 +9,8 @@ type TaskBox struct {
 	Id          int
 	Title       string
 	Description string
-	DueDate     string
+	CreatedTime time.Time
+	EndDate     time.Time
 	Complete    bool
 }
 
@@ -28,31 +29,45 @@ func GetTaskByID(id int) *TaskBox {
 	return nil
 }
 
-func AddTask(title string, description string, duedate string) error {
+func AddTask(title string, description string, endDate time.Time) error {
+	//adding ID
 	id := len(task) + 1
 	task[len(task)].Id = id
+
+	//Adding Title is mandetory
 	if title == "" {
 		return errors.New("Please provdie valid title")
 	} else {
 		task[len(task)].Title = title
 	}
 
+	//Adding description is optional
 	if description == "" {
 		task[len(task)].Description = ""
 	} else {
 		task[len(task)].Description = description
 	}
 
+	//Adding time and validation
 	currentTime := time.Now()
+	task[len(task)].CreatedTime = currentTime
 
-	if duedate == "" {
+	if endDate.IsZero() {
 		return errors.New("Please provdie a valid time to complete the task")
-	} else if duedate == currentTime {
-		return errors.New("Please provide a ")
+	} else if endDate.Equal(currentTime) {
+		return errors.New("Please provide a valid time to complete the task")
+	} else if endDate.Before(currentTime) {
+		return errors.New("due date cannot be in the past")
+	} else {
+		task[len(task)].EndDate = endDate
 	}
 
-	task[len(task)].DueDate = duedate
+	//task by default false at start
 	task[len(task)].Complete = false
 
 	return nil
+}
+
+func (t *TaskBox) Completed() {
+	t.Complete = true
 }
