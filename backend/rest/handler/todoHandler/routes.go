@@ -1,10 +1,10 @@
-package todohandler
+package todoHandler
 
 import (
 	"net/http"
-	"todolist/rest/middleware"
+	middleware "todolist/rest/middlewares"
 )
 
-func (h *Handler) RegisterRoutes(mux *http.ServeMux, manager *middleware.Middleware) {
+func (h *Handler) RegisterRoutes(mux *http.ServeMux, manager *middleware.Manager) {
 
 }

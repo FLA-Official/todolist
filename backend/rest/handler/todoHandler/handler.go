@@ -1,14 +1,14 @@
-package todohandler
+package todoHandler
 
 import (
-	"todolist/rest/middleware"
+	middleware "todolist/rest/middlewares"
 )
 
 type Handler struct {
-	middlewares *middleware.Middleware
+	middlewares *middleware.Middlewares
 }
 
-func Newhandler(middlewares *middleware.Middleware) *Handler {
+func Newhandler(middlewares *middleware.Middlewares) *Handler {
 	return &Handler{
 		middlewares: middlewares,
 	}
