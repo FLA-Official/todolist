@@ -10,7 +10,7 @@ type TaskRepo interface {
 	List() []*model.Task
 	GetTaskByID(id int) (*model.Task, error)
 	StoreTask(task model.Task) (*model.Task, error)
-	Completed(id int)
+	Completed(id int) error
 	Delete(id int) error
 	Update(utask model.Task) (*model.Task, error)
 }
@@ -20,7 +20,9 @@ type taskRepo struct {
 }
 
 func NewTaskRepo() TaskRepo {
-	repo := &taskRepo{}
+	repo := &taskRepo{
+		tasklist: []*model.Task{},
+	}
 	return repo
 }
 
@@ -32,11 +34,9 @@ func (t *taskRepo) GetTaskByID(id int) (*model.Task, error) {
 	for _, task := range t.tasklist {
 		if task.Id == id {
 			return task, nil
-		} else {
-			return nil, errors.New("The task is not found")
 		}
 	}
-	return nil, nil
+	return nil, errors.New("Task not found")
 }
 
 func (t *taskRepo) StoreTask(task model.Task) (*model.Task, error) {
@@ -45,7 +45,7 @@ func (t *taskRepo) StoreTask(task model.Task) (*model.Task, error) {
 	//Adding time
 	task.CreatedTime = time.Now()
 	//task by default false at start
-	t.tasklist[len(t.tasklist)].Complete = false
+	task.Complete = false
 
 	t.tasklist = append(t.tasklist, &task)
 
@@ -55,19 +55,21 @@ func (t *taskRepo) StoreTask(task model.Task) (*model.Task, error) {
 func (t *taskRepo) Update(utask model.Task) (*model.Task, error) {
 	for idx, task := range t.tasklist {
 		if task.Id == utask.Id {
+			utask.CreatedTime = task.CreatedTime
 			t.tasklist[idx] = &utask
+			return &utask, nil
 		}
 	}
 
-	return &utask, nil
+	return nil, errors.New("Task not found")
 }
 
 func (t *taskRepo) Delete(taskID int) error {
 	var tempList []*model.Task
 
-	for _, t := range t.tasklist {
-		if t.Id != taskID {
-			tempList = append(tempList, t)
+	for _, task := range t.tasklist {
+		if task.Id != taskID {
+			tempList = append(tempList, task)
 		}
 	}
 
@@ -77,6 +79,13 @@ func (t *taskRepo) Delete(taskID int) error {
 
 }
 
-func (t *taskRepo) Completed(id int) {
-	t.tasklist[id].Complete = true
+func (t *taskRepo) Completed(id int) error {
+	for _, task := range t.tasklist {
+		if task.Id == id {
+			task.Complete = true
+			return nil
+		}
+	}
+
+	return errors.New("Task not found")
 }
