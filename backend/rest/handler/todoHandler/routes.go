@@ -28,7 +28,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux, manager *middlewares.Manage
 
 	mux.Handle("PUT /tasks/{id}",
 		manager.With(
-			http.HandlerFunc(h.Updatetasks),
+			http.HandlerFunc(h.UpdateTask),
 			// h.middlewares.AuthenticateJWT,
 		),
 	) // declaring Route

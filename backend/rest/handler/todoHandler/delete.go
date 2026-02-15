@@ -3,7 +3,6 @@ package todoHandler
 import (
 	"net/http"
 	"strconv"
-	"todolist/utils"
 )
 
 func (h *Handler) DeleteTask(w http.ResponseWriter, r *http.Request) {
@@ -17,7 +16,11 @@ func (h *Handler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.taskrepo.Delete(id)
+	err = h.taskrepo.Delete(id)
+	if err != nil {
+		http.Error(w, "Error deleting task", http.StatusInternalServerError)
+		return
+	}
 
-	utils.SendData(w, "Successfully deleted the task", http.StatusCreated)
+	w.WriteHeader(http.StatusNoContent)
 }

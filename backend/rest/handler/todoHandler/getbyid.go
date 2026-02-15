@@ -6,7 +6,7 @@ import (
 	"todolist/utils"
 )
 
-// GetProductsByID handles GET /products/{id} and returns the requested product if found.
+// GetTaskByID handles GET /tasks/{id} and returns the requested task if found.
 func (h *Handler) GetTaskByID(w http.ResponseWriter, r *http.Request) {
 	// creating encoder object
 	TaskID := r.PathValue("id")
@@ -14,11 +14,15 @@ func (h *Handler) GetTaskByID(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(TaskID)
 
 	if err != nil {
-		http.Error(w, "Please give me a valid product id", http.StatusBadRequest)
+		http.Error(w, "Invalid task id", http.StatusBadRequest)
 		return
 	}
 
-	task, _ := h.taskrepo.GetTaskByID(id)
+	task, err := h.taskrepo.GetTaskByID(id)
+	if err != nil {
+		http.Error(w, "Error retrieving task", http.StatusInternalServerError)
+		return
+	}
 
 	if task == nil {
 		utils.SendData(w, "Task not found", http.StatusNotFound)

@@ -8,7 +8,7 @@ import (
 	"todolist/utils"
 )
 
-// CreateProduct handles POST /products and adds a new product to the database.
+// CreateTask handles POST /tasks and adds a new task to the database.
 func (h *Handler) CreateTask(w http.ResponseWriter, r *http.Request) {
 
 	var newTask model.Task

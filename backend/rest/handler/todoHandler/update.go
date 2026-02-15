@@ -9,8 +9,8 @@ import (
 	"todolist/utils"
 )
 
-// creating GET http Method to get data from database.
-func (h *Handler) Updatetasks(w http.ResponseWriter, r *http.Request) {
+// UpdateTask handles PUT /tasks/{id} and updates an existing task.
+func (h *Handler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 
 	taskID := r.PathValue("id")
 
@@ -35,7 +35,11 @@ func (h *Handler) Updatetasks(w http.ResponseWriter, r *http.Request) {
 
 	newTask.Id = id
 	// creating encoder object
-	h.taskrepo.Update(newTask)
+	updatedTask, err := h.taskrepo.Update(newTask)
+	if err != nil {
+		http.Error(w, "Error updating task", http.StatusInternalServerError)
+		return
+	}
 
-	utils.SendData(w, "Successfully updated product", http.StatusCreated)
+	utils.SendData(w, updatedTask, http.StatusOK)
 }
