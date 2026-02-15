@@ -1,15 +1,20 @@
 package todoHandler
 
 import (
-	middleware "todolist/rest/middlewares"
+	"todolist/repo"
+	"todolist/rest/middlewares"
 )
 
+// Handler handles product-related HTTP requests.
 type Handler struct {
-	middlewares *middleware.Middlewares
+	middlewares *middlewares.Middlewares
+	taskrepo    repo.TaskRepo
 }
 
-func Newhandler(middlewares *middleware.Middlewares) *Handler {
+// NewHandler constructs a new product Handler with the provided middlewares.
+func NewHandler(middlewares *middlewares.Middlewares, taskrepo repo.TaskRepo) *Handler {
 	return &Handler{
 		middlewares: middlewares,
+		taskrepo:    taskrepo,
 	}
 }

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"todolist/config"
+	"todolist/repo"
 	"todolist/rest"
 	"todolist/rest/handler/todoHandler"
 	"todolist/rest/middlewares"
@@ -12,7 +13,9 @@ func Serve() {
 
 	m := middlewares.NewMiddlewares(cnf)
 
-	todoHandler := todoHandler.Newhandler(m)
+	// create a task repository and pass it to the handler
+	repo := repo.NewTaskRepo()
+	todoHandler := todoHandler.NewHandler(m, repo)
 	server := rest.NewServer(cnf, todoHandler)
 
 	server.Start()
