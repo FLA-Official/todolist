@@ -23,6 +23,8 @@ func NewTaskRepo() TaskRepo {
 	repo := &taskRepo{
 		tasklist: []*model.Task{},
 	}
+
+	generateinittask(repo)
 	return repo
 }
 
@@ -88,4 +90,28 @@ func (t *taskRepo) Completed(id int) error {
 	}
 
 	return errors.New("Task not found")
+}
+
+func generateinittask(r *taskRepo) {
+	t1 := &model.Task{
+		Id:          1,
+		Title:       "abc",
+		Description: "bcd",
+		CreatedTime: time.Now(),
+		EndDate:     time.Date(2026, time.February, 18, 6, 00, 00, 00, time.UTC),
+		Complete:    false,
+	}
+
+	t2 := &model.Task{
+		Id:          2,
+		Title:       "abcd",
+		Description: "bcdg",
+		CreatedTime: time.Now(),
+		EndDate:     time.Date(2026, time.February, 18, 6, 00, 00, 00, time.UTC),
+		Complete:    false,
+	}
+
+	r.tasklist = append(r.tasklist, t1)
+	r.tasklist = append(r.tasklist, t2)
+
 }

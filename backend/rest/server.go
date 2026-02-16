@@ -29,8 +29,8 @@ func (server *Server) Start() {
 	manager := middlewares.NewManager()
 
 	manager.Use(
-		middlewares.Cors,
 		middlewares.Preflight,
+		middlewares.Cors,
 		middlewares.Logger,
 	)
 
