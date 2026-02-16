@@ -1,0 +1,40 @@
+.container {
+  max-width: 700px;
+  margin: 40px auto;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.form input {
+  flex: 1;
+  padding: 8px;
+}
+
+.task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.task {
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.task.completed {
+  background-color: #e0ffe5;
+  text-decoration: line-through;
+}
+
