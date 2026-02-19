@@ -1,4 +1,4 @@
-package todoHandler
+package taskHandler
 
 import (
 	"encoding/json"
@@ -9,7 +9,7 @@ import (
 )
 
 // CreateTask handles POST /tasks and adds a new task to the database.
-func (h *Handler) CreateTask(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CreateTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	var newTask model.Task
 	// creating decoder object
@@ -22,7 +22,7 @@ func (h *Handler) CreateTask(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Please provide valid json", http.StatusBadRequest)
 		return
 	}
-	createdTask, err := h.taskrepo.StoreTask(newTask)
+	createdTask, err := h.taskrepo.CreateTask(&newTask)
 
 	// creating encoder object
 	utils.SendData(w, createdTask, http.StatusCreated)

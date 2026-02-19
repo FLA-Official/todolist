@@ -1,4 +1,4 @@
-package todoHandler
+package taskHandler
 
 import (
 	"net/http"
@@ -16,7 +16,7 @@ func (h *Handler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.taskrepo.Delete(id)
+	err = h.taskrepo.DeleteTask(id)
 	if err != nil {
 		http.Error(w, "Error deleting task", http.StatusInternalServerError)
 		return

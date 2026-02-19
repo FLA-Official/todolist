@@ -1,4 +1,4 @@
-package todoHandler
+package taskHandler
 
 import (
 	"todolist/repo"

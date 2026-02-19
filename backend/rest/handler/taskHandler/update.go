@@ -1,4 +1,4 @@
-package todoHandler
+package taskHandler
 
 import (
 	"encoding/json"
@@ -33,13 +33,10 @@ func (h *Handler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newTask.Id = id
+	newTask.ID = id
 	// creating encoder object
-	updatedTask, err := h.taskrepo.Update(newTask)
-	if err != nil {
-		http.Error(w, "Error updating task", http.StatusInternalServerError)
-		return
-	}
+	updatedTask := h.taskrepo.UpdateTask(&newTask)
 
 	utils.SendData(w, updatedTask, http.StatusOK)
+
 }

@@ -7,12 +7,13 @@ import (
 )
 
 type TaskRepo interface {
-	List() []*model.Task
+	CreateTask(task *model.Task) (*model.Task, error)
 	GetTaskByID(id int) (*model.Task, error)
-	StoreTask(task model.Task) (*model.Task, error)
-	Completed(id int) error
-	Delete(id int) error
-	Update(utask model.Task) (*model.Task, error)
+	UpdateTask(task *model.Task) error
+	DeleteTask(id int) error
+	ListTasks() ([]model.Task, error)
+	ListTasksByProject(projectID int) ([]model.Task, error)
+	ListTasksByAssignee(assigneeID int) ([]model.Task, error)
 }
 
 type taskRepo struct {
@@ -20,59 +21,68 @@ type taskRepo struct {
 }
 
 func NewTaskRepo() TaskRepo {
-	repo := &taskRepo{
-		tasklist: []*model.Task{},
-	}
-
-	generateinittask(repo)
+	repo := &taskRepo{}
 	return repo
 }
 
-func (t *taskRepo) List() []*model.Task {
-	return t.tasklist
+// 	ID          int       `json:"id" gorm:"primaryKey"`
+// 	ProjectID   int       `json:"project_id"`
+// 	Project     Project   `json:"project" gorm:"foreignKey:ProjectID"`
+// 	Title       string    `json:"title"`
+// 	Description string    `json:"description,omitempty"`
+// 	Status      string    `json:"status"`
+// 	Priority    string    `json:"priority"`
+// 	AssigneeID  *int      `json:"assignee_id,omitempty"`
+// 	CreatedAt   time.Time `json:"created_at"`
+// 	EndAt   time.Time `json:"updated_at"`
+
+func (t *taskRepo) CreateTask(task *model.Task) (*model.Task, error) {
+	//adding ID
+	task.ID = len(t.tasklist) + 1
+	//Adding time
+	task.CreatedAt = time.Now()
+	err := task.Validate()
+	if err != nil {
+		return nil, err
+	} else {
+		t.tasklist = append(t.tasklist, task)
+	}
+
+	return task, nil
 }
 
 func (t *taskRepo) GetTaskByID(id int) (*model.Task, error) {
 	for _, task := range t.tasklist {
-		if task.Id == id {
+		if task.ID == id {
 			return task, nil
 		}
 	}
 	return nil, errors.New("Task not found")
 }
 
-func (t *taskRepo) StoreTask(task model.Task) (*model.Task, error) {
-	//adding ID
-	task.Id = len(t.tasklist) + 1
-	//Adding time
-	task.CreatedTime = time.Now()
-	//task by default false at start
-	task.Complete = false
-
-	t.tasklist = append(t.tasklist, &task)
-
-	return &task, nil
-}
-
-func (t *taskRepo) Update(utask model.Task) (*model.Task, error) {
+func (t *taskRepo) UpdateTask(utask *model.Task) error {
 	for idx, task := range t.tasklist {
-		if task.Id == utask.Id {
-			utask.CreatedTime = task.CreatedTime
-			t.tasklist[idx] = &utask
-			return &utask, nil
+		if task.ID == utask.ID {
+			utask.CreatedAt = task.CreatedAt
+			t.tasklist[idx] = utask
+			return nil
 		}
 	}
 
-	return nil, errors.New("Task not found")
+	return errors.New("Task not found")
 }
 
-func (t *taskRepo) Delete(taskID int) error {
+func (t *taskRepo) DeleteTask(id int) error {
 	var tempList []*model.Task
 
 	for _, task := range t.tasklist {
-		if task.Id != taskID {
+		if task.ID != id {
 			tempList = append(tempList, task)
 		}
+	}
+	//to maintain ID order 1,2,3,4....
+	for i := 0; i < len(tempList); i++ {
+		tempList[i].ID = i + 1
 	}
 
 	t.tasklist = tempList
@@ -81,37 +91,59 @@ func (t *taskRepo) Delete(taskID int) error {
 
 }
 
-func (t *taskRepo) Completed(id int) error {
+func (t *taskRepo) ListTasks() ([]model.Task, error) {
+	var tasks []model.Task
+
+	if len(t.tasklist) == 0 {
+		return nil, nil
+	} else {
+		for _, task := range t.tasklist {
+			tasks = append(tasks, *task)
+		}
+		return tasks, nil
+	}
+
+}
+
+func (t *taskRepo) ListTasksByProject(projectID int) ([]model.Task, error) {
+	var tempList []model.Task
+
 	for _, task := range t.tasklist {
-		if task.Id == id {
-			task.Complete = true
-			return nil
+		if task.ProjectID == projectID {
+			tempList = append(tempList, *task)
 		}
 	}
-
-	return errors.New("Task not found")
-}
-
-func generateinittask(r *taskRepo) {
-	t1 := &model.Task{
-		Id:          1,
-		Title:       "abc",
-		Description: "bcd",
-		CreatedTime: time.Now(),
-		EndDate:     time.Date(2026, time.February, 18, 6, 00, 00, 00, time.UTC),
-		Complete:    false,
+	if len(tempList) > 0 {
+		return tempList, nil
+	} else {
+		return nil, errors.New("No Task Available under this Project")
 	}
 
-	t2 := &model.Task{
-		Id:          2,
-		Title:       "abcd",
-		Description: "bcdg",
-		CreatedTime: time.Now(),
-		EndDate:     time.Date(2026, time.February, 18, 6, 00, 00, 00, time.UTC),
-		Complete:    false,
+}
+
+func (t *taskRepo) ListTasksByAssignee(assigneeID int) ([]model.Task, error) {
+	var tempList []model.Task
+
+	for _, task := range t.tasklist {
+		if task.AssigneeID == &assigneeID {
+			tempList = append(tempList, *task)
+		}
+	}
+	if len(tempList) > 0 {
+		return tempList, nil
+	} else {
+		return nil, errors.New("No Task is assigned by this assignee")
 	}
 
-	r.tasklist = append(r.tasklist, t1)
-	r.tasklist = append(r.tasklist, t2)
-
 }
+
+// func (t *taskRepo) Completed(id int) error {
+// 	for _, task := range t.tasklist {
+// 		if task.Id == id {
+// 			task.Complete = true
+// 			return nil
+// 		}
+// 	}
+
+// 	return errors.New("Task not found")
+// }

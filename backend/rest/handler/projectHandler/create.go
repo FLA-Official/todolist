@@ -1,4 +1,4 @@
-package userHandler
+package projectHandler
 
 import (
 	"encoding/json"
@@ -8,26 +8,26 @@ import (
 	"todolist/utils"
 )
 
-// CreateUserHandler handles POST /users and adds a new user to the database.
-func (h *Handler) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
+// CreateProjectHandler handles POST /projects and adds a new project to the database.
+func (h *Handler) CreateProjectHandler(w http.ResponseWriter, r *http.Request) {
 
-	var newUser model.User
+	var newProject model.Project
 	// creating decoder object
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
-	err := decoder.Decode(&newUser)
+	err := decoder.Decode(&newProject)
 	if err != nil {
 		fmt.Println(err)
 		http.Error(w, "Please provide valid json", http.StatusBadRequest)
 		return
 	}
-	err = h.userrepo.CreateUser(&newUser)
+	err = h.projectrepo.CreateProject(&newProject)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	// creating encoder object
-	utils.SendData(w, newUser, http.StatusCreated)
+	utils.SendData(w, newProject, http.StatusCreated)
 
 }

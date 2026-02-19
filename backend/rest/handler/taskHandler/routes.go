@@ -1,4 +1,4 @@
-package todoHandler
+package taskHandler
 
 import (
 	"net/http"
@@ -16,7 +16,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux, manager *middlewares.Manage
 
 	mux.Handle("POST /tasks",
 		manager.With(
-			http.HandlerFunc(h.CreateTask),
+			http.HandlerFunc(h.CreateTaskHandler),
 		),
 	) // declaring Route
 
@@ -29,14 +29,14 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux, manager *middlewares.Manage
 	mux.Handle("PUT /tasks/{id}",
 		manager.With(
 			http.HandlerFunc(h.UpdateTask),
-			// h.middlewares.AuthenticateJWT,
+			h.middlewares.AuthenticateJWT,
 		),
 	) // declaring Route
 
 	mux.Handle("DELETE /tasks/{id}",
 		manager.With(
 			http.HandlerFunc(h.DeleteTask),
-			// h.middlewares.AuthenticateJWT,
+			h.middlewares.AuthenticateJWT,
 		),
 	) // declaring Route
 
