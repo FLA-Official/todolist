@@ -29,14 +29,14 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux, manager *middlewares.Manage
 	mux.Handle("PUT /projects/{id}",
 		manager.With(
 			http.HandlerFunc(h.UpdateProject),
-			// h.middlewares.AuthenticateJWT,
+			h.middlewares.AuthenticateJWT,
 		),
 	) // declaring Route
 
 	mux.Handle("DELETE /projects/{id}",
 		manager.With(
 			http.HandlerFunc(h.DeleteProject),
-			// h.middlewares.AuthenticateJWT,
+			h.middlewares.AuthenticateJWT,
 		),
 	) // declaring Route
 

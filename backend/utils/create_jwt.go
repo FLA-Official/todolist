@@ -13,11 +13,10 @@ type Header struct {
 }
 
 type Payload struct {
-	Sub         int    `json:"sub"`
-	FirstName   string `json:"first_name"`
-	LastName    string `json:"last_name"`
-	Email       string `json:"email"`
-	IsShopOwner bool   `json:"is_shop_owner"`
+	ID       int    `json:"id"`
+	Username string `json:"username"`
+	Fullname string `json:"fullname"`
+	Gmail    string `json:"gmail"`
 }
 
 func CreateJWT(secret string, data Payload) (string, error) {

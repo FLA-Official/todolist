@@ -61,5 +61,8 @@ func (m *Middlewares) AuthenticateJWT(next http.Handler) http.Handler {
 			http.Error(w, "Unauthorized, Hacker Detected", http.StatusUnauthorized)
 			return
 		}
+
+		// JWT is valid, pass to next handler
+		next.ServeHTTP(w, r)
 	})
 }

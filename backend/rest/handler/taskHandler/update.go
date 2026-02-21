@@ -34,9 +34,12 @@ func (h *Handler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	newTask.ID = id
-	// creating encoder object
-	updatedTask := h.taskrepo.UpdateTask(&newTask)
+	err = h.taskrepo.UpdateTask(&newTask)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
-	utils.SendData(w, updatedTask, http.StatusOK)
+	utils.SendData(w, newTask, http.StatusOK)
 
 }

@@ -36,8 +36,8 @@ func (t *Task) Validate() error {
 		return errors.New("End time can not be in past")
 	}
 
-	if t.EndAt.After(t.Project.EndAt) {
-		return errors.New("The task ")
+	if !t.Project.EndAt.IsZero() && t.EndAt.After(t.Project.EndAt) {
+		return errors.New("Task end date cannot be after project end date")
 	}
 
 	return nil

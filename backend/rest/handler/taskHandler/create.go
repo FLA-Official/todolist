@@ -23,6 +23,10 @@ func (h *Handler) CreateTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	createdTask, err := h.taskrepo.CreateTask(&newTask)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	// creating encoder object
 	utils.SendData(w, createdTask, http.StatusCreated)

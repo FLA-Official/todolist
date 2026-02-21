@@ -35,7 +35,8 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	newUser.ID = id
 	err = h.userrepo.UpdateUser(&newUser)
 	if err != nil {
-		http.Error(w, "Error updating user", http.StatusInternalServerError)
+		fmt.Println("UpdateUser error:", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 

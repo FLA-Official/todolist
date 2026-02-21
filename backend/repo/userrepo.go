@@ -34,22 +34,24 @@ func NewUserRepo() UserRepo {
 func (u *userRepo) CreateUser(user *model.User) error {
 	//adding ID
 	user.ID = len(u.userlist) + 1
-	//Adding time
 
 	err := user.Validate()
 	if err != nil {
 		return err
-	} else {
-		for _, users := range u.userlist {
-			if users.Gmail == user.Gmail {
-				return errors.New("There is already a user under this gmail")
-			} else if users.Username == user.Username {
-				return errors.New("This username is not available")
-			} else {
-				u.userlist = append(u.userlist, user)
-			}
+	}
+
+	// Check for duplicate email or username
+	for _, existingUser := range u.userlist {
+		if existingUser.Gmail == user.Gmail {
+			return errors.New("There is already a user under this gmail")
+		}
+		if existingUser.Username == user.Username {
+			return errors.New("This username is not available")
 		}
 	}
+
+	// Append user to list
+	u.userlist = append(u.userlist, user)
 
 	return nil
 }
@@ -75,15 +77,22 @@ func (u *userRepo) GetUserByEmail(email string) (*model.User, error) {
 }
 
 func (u *userRepo) UpdateUser(user *model.User) error {
-	for idx, users := range u.userlist {
-		if users.ID == user.ID {
-			users.CreatedAt = user.CreatedAt
+	// Validate user data
+	err := user.Validate()
+	if err != nil {
+		return err
+	}
+
+	for idx, existingUser := range u.userlist {
+		if existingUser.ID == user.ID {
+			// Preserve the original creation time
+			user.CreatedAt = existingUser.CreatedAt
 			u.userlist[idx] = user
 			return nil
 		}
 	}
 
-	return errors.New("Task not found")
+	return errors.New("User not found")
 }
 
 func (u *userRepo) DeleteUser(id int) error {

@@ -7,11 +7,11 @@ import (
 
 // GetTasks handles GET /tasks and returns a list of all tasks.
 func (h *Handler) GetTasks(w http.ResponseWriter, r *http.Request) {
-	// creating encoder object
 	allTask, err := h.taskrepo.ListTasks()
 
-	if err != nil {
-		http.Error(w, "No Task Available", http.StatusBadGateway)
+	if err != nil && len(allTask) == 0 {
+		http.Error(w, "No Task Available", http.StatusNotFound)
+		return
 	}
 
 	utils.SendData(w, allTask, http.StatusOK)
