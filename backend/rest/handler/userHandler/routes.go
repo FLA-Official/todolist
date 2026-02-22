@@ -14,9 +14,16 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux, manager *middlewares.Manage
 		),
 	)
 
-	mux.Handle("POST /users/login",
+	mux.Handle("POST /login",
 		manager.With(
 			http.HandlerFunc(h.Login),
+		),
+	)
+
+	mux.Handle("PUT /users/{id}",
+		manager.With(
+			http.HandlerFunc(h.Login),
+			h.middlewares.AuthenticateJWT,
 		),
 	)
 
