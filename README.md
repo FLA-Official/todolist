@@ -1,4 +1,4 @@
-# 🚀 TodoList (Jira-style Task Manager)
+# 🚀 TodoList
 
 A full-stack **Todo / Task Management Application** built to organize tasks efficiently with a clean UI and scalable backend.
 
@@ -57,21 +57,40 @@ todolist/
 
 ```bash
 git clone https://github.com/FLA-Official/todolist.git
+```
+```bash
 cd todolist
-
+```
+```bash
 cd frontend
+```
+```bash
 npm install
+```
+```bash
+npm run dev
+```
+
+
 npm run dev
 
 # if you get
 ## vite is not recognized
 #Then run 
-npm install vite
 
+```bash
+npm install vite
+```
 ### Run Backend 
+```bash
 cd backend
+```
+``` bash
 go mod tidy
+```
+```bash
 go run main.go
+```
 
 4️⃣ Environment Variables
 
