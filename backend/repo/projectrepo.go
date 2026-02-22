@@ -2,6 +2,7 @@ package repo
 
 import (
 	"errors"
+	"fmt"
 	"time"
 	"todolist/model"
 )
@@ -105,7 +106,7 @@ func (p *projectRepo) ListProjectsByOwner(ownerID int) ([]model.Project, error) 
 	if len(tempList) > 0 {
 		return tempList, nil
 	} else {
-		return nil, errors.New("Owener with the ID:" + string(ownerID) + "Does not have any Project")
+		return nil, fmt.Errorf("Owener with the ID:%d Does not have any Project", ownerID)
 	}
 
 }

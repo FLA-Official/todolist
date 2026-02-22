@@ -125,7 +125,7 @@ func (t *taskRepo) ListTasksByAssignee(assigneeID int) ([]model.Task, error) {
 	var tempList []model.Task
 
 	for _, task := range t.tasklist {
-		if task.AssigneeID == &assigneeID {
+		if task.AssigneeID != nil && *task.AssigneeID == assigneeID {
 			tempList = append(tempList, *task)
 		}
 	}

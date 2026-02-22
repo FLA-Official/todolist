@@ -1,19 +1,9 @@
-import { Draggable } from "@hello-pangea/dnd";
-
-const TaskCard = ({ task, index }) => {
+const TaskCard = ({ task, innerRef, ...props }) => {
   return (
-    <Draggable draggableId={task.id} index={index}>
-      {(provided) => (
-        <div
-          className="task-card"
-          ref={provided.innerRef}
-          {...provided.draggableProps}
-          {...provided.dragHandleProps}
-        >
-          <p>{task.title}</p>
-        </div>
-      )}
-    </Draggable>
+    <div className="task-card" ref={innerRef} {...props}>
+      <h4>{task.title}</h4>
+      <p>{task.description}</p>
+    </div>
   );
 };
 

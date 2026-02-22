@@ -1,17 +1,15 @@
-import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
+import Sidebar from "../components/Sidebar";
 import Board from "../components/Board";
 
-const Dashboard = () => {
-  return (
-    <div className="app-container">
-      <Sidebar />
-      <div className="main-content">
-        <Navbar />
-        <Board />
-      </div>
+const Dashboard = () => (
+  <div className="layout">
+    <Sidebar />
+    <div className="main">
+      <Navbar />
+      <Board />
     </div>
-  );
-};
+  </div>
+);
 
 export default Dashboard;

@@ -1,36 +1,63 @@
-import { useState } from "react";
-import { DragDropContext } from "@hello-pangea/dnd";
+import { DragDropContext, Droppable } from "@hello-pangea/dnd";
 import Column from "./Column";
-
-const initialTasks = [
-  { id: "1", title: "Design login page", status: "todo" },
-  { id: "2", title: "Fix API bug", status: "inprogress" },
-  { id: "3", title: "Deploy backend", status: "done" },
-];
+import { useEffect, useState } from "react";
+import { getTasks, updateTaskStatus } from "../api/tasks";
 
 const Board = () => {
-  const [tasks, setTasks] = useState(initialTasks);
+  const [columns, setColumns] = useState({
+    "todo": { name: "To Do", items: [] },
+    "inprogress": { name: "In Progress", items: [] },
+    "done": { name: "Done", items: [] }
+  });
 
-  const handleDragEnd = (result) => {
-    if (!result.destination) return;
+  useEffect(() => {
+    // Load tasks from backend
+    getTasks("defaultProjectId") // replace with your projectId
+      .then(res => res.json())
+      .then(tasks => {
+        const col = { todo: [], inprogress: [], done: [] };
+        tasks.forEach(task => col[task.status]?.push(task));
+        setColumns({
+          todo: { name: "To Do", items: col.todo },
+          inprogress: { name: "In Progress", items: col.inprogress },
+          done: { name: "Done", items: col.done }
+        });
+      });
+  }, []);
 
-    const { draggableId, destination } = result;
+  const onDragEnd = async (result) => {
+    const { source, destination } = result;
+    if (!destination) return;
 
-    const updatedTasks = tasks.map((task) =>
-      task.id === draggableId
-        ? { ...task, status: destination.droppableId }
-        : task
-    );
+    const sourceCol = columns[source.droppableId];
+    const destCol = columns[destination.droppableId];
+    const [removed] = sourceCol.items.splice(source.index, 1);
 
-    setTasks(updatedTasks);
+    removed.status = destination.droppableId;
+    destCol.items.splice(destination.index, 0, removed);
+
+    setColumns({ ...columns });
+
+    // Update backend
+    await updateTaskStatus(removed.id, removed.status);
   };
 
   return (
-    <DragDropContext onDragEnd={handleDragEnd}>
+    <DragDropContext onDragEnd={onDragEnd}>
       <div className="board">
-        <Column title="To Do" status="todo" tasks={tasks} />
-        <Column title="In Progress" status="inprogress" tasks={tasks} />
-        <Column title="Done" status="done" tasks={tasks} />
+        {Object.entries(columns).map(([id, col]) => (
+          <Droppable droppableId={id} key={id}>
+            {(provided) => (
+              <Column
+                innerRef={provided.innerRef}
+                {...provided.droppableProps}
+                column={col}
+              >
+                {provided.placeholder}
+              </Column>
+            )}
+          </Droppable>
+        ))}
       </div>
     </DragDropContext>
   );

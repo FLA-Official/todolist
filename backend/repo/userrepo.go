@@ -12,6 +12,7 @@ type UserRepo interface {
 	UpdateUser(user *model.User) error
 	DeleteUser(id int) error
 	ListUsers() ([]model.User, error)
+	Find(email, password string) (*model.User, error)
 }
 
 // ID        int       `json:"userid"`
@@ -125,4 +126,14 @@ func (u *userRepo) ListUsers() ([]model.User, error) {
 		return users, nil
 	}
 
+}
+
+func (u *userRepo) Find(email, password string) (*model.User, error) {
+	for _, user := range u.userlist {
+		if user.Gmail == email && user.Password == password {
+			return user, nil
+		}
+	}
+
+	return nil, errors.New("Credentials mismatch or User do not exist through this mail")
 }

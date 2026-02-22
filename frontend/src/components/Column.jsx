@@ -1,27 +1,23 @@
-import { Droppable } from "@hello-pangea/dnd";
+import { Draggable } from "@hello-pangea/dnd";
 import TaskCard from "./TaskCard";
 
-const Column = ({ title, status, tasks }) => {
-  const filteredTasks = tasks.filter((task) => task.status === status);
-
+const Column = ({ column, innerRef, children, ...props }) => {
   return (
-    <div className="column">
-      <h4>{title}</h4>
-
-      <Droppable droppableId={status}>
-        {(provided) => (
-          <div
-            ref={provided.innerRef}
-            {...provided.droppableProps}
-            className="task-list"
-          >
-            {filteredTasks.map((task, index) => (
-              <TaskCard key={task.id} task={task} index={index} />
-            ))}
-            {provided.placeholder}
-          </div>
-        )}
-      </Droppable>
+    <div className="column" ref={innerRef} {...props}>
+      <h3>{column.name}</h3>
+      {column.items.map((task, index) => (
+        <Draggable key={task.id} draggableId={String(task.id)} index={index}>
+          {(provided) => (
+            <TaskCard
+              task={task}
+              innerRef={provided.innerRef}
+              {...provided.draggableProps}
+              {...provided.dragHandleProps}
+            />
+          )}
+        </Draggable>
+      ))}
+      {children}
     </div>
   );
 };
