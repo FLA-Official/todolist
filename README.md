@@ -1,121 +1,124 @@
-📌 TodoList 
+# 🚀 TodoList (Jira-style Task Manager)
 
-A full-stack Todo / Task Management Application designed to organize tasks efficiently with a clean UI and scalable backend architecture.
+A full-stack **Todo / Task Management Application** built to organize tasks efficiently with a clean UI and scalable backend.
 
-🚀 Features
+---
 
-✅ Create, update, and delete tasks
+## 📸 Preview
 
-📂 Organize tasks into projects
+Unfortunately, no SS yet as I am trying to update it a bit more and looks more stable so stay tuned and please accept my apologies.
+<!-- Add screenshots here -->
+<!-- ![App Screenshot](./screenshots/app.png) -->
 
-🏷️ Task attributes (status, due date, etc.)
+---
 
-🔐 Authentication system (planned / optional)
+## ✨ Features
 
-⚡ Fast and responsive UI (React + Vite)
+- ✅ Create, update, and delete tasks
+- 📂 Organize tasks into projects
+- 🏷️ Task properties (status, due date, etc.)
+- ⚡ Fast UI with React + Vite
+- 🔧 REST API backend (Go)
+- 📦 Scalable project structure
 
-🔧 RESTful API backend (Go)
+---
 
-🛠️ Tech Stack
-Frontend
+## 🛠️ Tech Stack
 
-⚛️ React (Vite)
+### Frontend
+- React (Vite)
+- React Router
+- CSS / Tailwind (if used)
 
-🎨 CSS / Tailwind (if used)
+### Backend
+- Go (Golang)
+- REST API
 
-🔀 React Router
+### Database
+- PostgreSQL (or planned)
 
-Backend
+---
 
-🐹 Go (Golang)
+## 📁 Project Structure
 
-🌐 REST API
-
-🗄️ PostgreSQL (or planned DB)
-
-📁 Project Structure
 todolist/
 │
-├── frontend/        # React app (UI)
-├── backend/         # Go server (API)
-├── db/              # Database schema / scripts
+├── frontend/ # React app
+├── backend/ # Go API server
+├── db/ # Database scripts/schema
 └── README.md
-⚙️ Getting Started
-1️⃣ Clone the Repository
+
+
+---
+
+## ⚙️ Getting Started
+
+### 1️⃣ Clone the repo
+
+```bash
 git clone https://github.com/FLA-Official/todolist.git
 cd todolist
-2️⃣ Run Frontend
+
 cd frontend
 npm install
 npm run dev
 
-If you see error like:
-
-'vite' is not recognized
-
-Run:
-
+# if you get
+## vite is not recognized
+#Then run 
 npm install vite
-3️⃣ Run Backend
+
+### Run Backend 
 cd backend
 go mod tidy
 go run main.go
-4️⃣ Environment Setup (if needed)
 
-Create .env file:
+4️⃣ Environment Variables
+
+Create .env file in backend:
 
 PORT=8080
 DB_URL=your_database_url
-📡 API Endpoints (Example)
-Method	Endpoint	Description
-GET	/tasks	Get all tasks
-POST	/tasks	Create a task
-PUT	/tasks/:id	Update a task
-DELETE	/tasks/:id	Delete a task
-🧠 Learning Purpose
+
+| Method | Endpoint   | Description   |
+| ------ | ---------- | ------------- |
+| GET    | /tasks     | Get all tasks |
+| POST   | /tasks     | Create a task |
+| PUT    | /tasks/:id | Update a task |
+| DELETE | /tasks/:id | Delete a task |
+
+
+🧠 Purpose
 
 This project is built to:
 
 Practice full-stack development
 
-Understand React + Go integration
+Learn React + Go integration
 
-Learn REST API design
+Understand REST API design
 
 Simulate a Jira-like system
 
-🧪 Future Improvements
+🔮 Future Improvements
 
 🔐 Authentication (JWT)
 
-👥 Multi-user support
+👥 Multi-user system
 
 📊 Dashboard & analytics
 
-🧩 Drag-and-drop tasks (like Jira)
+🧩 Drag-and-drop tasks
 
 ☁️ Deployment (Docker + CI/CD)
 
-🤝 Contributing
-
-Contributions are welcome!
-
-# Fork the repo
-# Create a branch
-git checkout -b feature/your-feature
-
-# Commit changes
-git commit -m "Add feature"
-
-# Push
-git push origin feature/your-feature
 ⭐ Support
 
 If you like this project, give it a ⭐ on GitHub!
 
 📜 License
 
-This project is licensed under the MIT License.
+MIT License
 
 👨‍💻 Author
 
