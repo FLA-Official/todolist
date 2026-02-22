@@ -74,9 +74,9 @@ npm run dev
 
 npm run dev
 
-# if you get
-## vite is not recognized
-#Then run 
+### if you get
+``` vite is not recognized ```
+### Then run 
 
 ```bash
 npm install vite
@@ -106,8 +106,9 @@ DB_URL=your_database_url
 | PUT    | /tasks/:id | Update a task |
 | DELETE | /tasks/:id | Delete a task |
 
+---
 
-🧠 Purpose
+###🧠 Purpose
 
 This project is built to:
 
@@ -119,7 +120,9 @@ Understand REST API design
 
 Simulate a Jira-like system
 
-🔮 Future Improvements
+---
+
+### 🔮 Future Improvements
 
 🔐 Authentication (JWT)
 
@@ -131,13 +134,14 @@ Simulate a Jira-like system
 
 ☁️ Deployment (Docker + CI/CD)
 
+---
+
 ⭐ Support
 
 If you like this project, give it a ⭐ on GitHub!
 
-📜 License
+---
 
-MIT License
 
 👨‍💻 Author
 
