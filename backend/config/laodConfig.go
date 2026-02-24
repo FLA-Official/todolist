@@ -15,8 +15,14 @@ type Config struct {
 	ServiceName  string
 	HttpPort     int
 	JWTSecretKey string
+	DBuser       string
+	DBpassword   string
+	Host         string
+	port         int
+	dbname       string
 }
 
+// user=fla password=FL@pon676701234 host=localhost port=5432 dbname=todo_db
 var configuration *Config
 
 // loadConfig reads environment variables and validates required values.
@@ -56,6 +62,43 @@ func loadConfig() {
 
 	if jwtSecretKey == "" {
 		fmt.Println("JWT secret key is required")
+		os.Exit(1)
+	}
+
+	// 	DB_USER=fla
+	// DB_PASSWORD=FL@pon676701234
+	// DB_HOST=localhst
+	// DB_PORT=5432
+	// DB_NAME=todo_db
+	dbusername := os.Getenv("DB_USER")
+	if dbusername == "" {
+		fmt.Println("Database user name is required")
+		os.Exit(1)
+	}
+
+	dbpassword := os.Getenv("DB_PASSWORD")
+	if dbpassword == "" {
+		fmt.Println("Database user password is required")
+		os.Exit(1)
+	}
+
+	dbhost := os.Getenv("DB_HOST")
+
+	if dbhost == "" {
+		fmt.Println("Database host is required")
+		os.Exit(1)
+	}
+
+	dbport := os.Getenv("DB_PORT")
+
+	if dbport == "" {
+		fmt.Println("Database Port is required")
+		os.Exit(1)
+	}
+
+	dbname := os.Getenv("DB_NAME")
+	if dbname == "" {
+		fmt.Println("Database Name is required")
 		os.Exit(1)
 	}
 
