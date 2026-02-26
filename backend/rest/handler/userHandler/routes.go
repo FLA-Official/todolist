@@ -22,7 +22,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux, manager *middlewares.Manage
 
 	mux.Handle("PUT /users/{id}",
 		manager.With(
-			http.HandlerFunc(h.Login),
+			http.HandlerFunc(h.UpdateUser),
 			h.middlewares.AuthenticateJWT,
 		),
 	)

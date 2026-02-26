@@ -12,7 +12,7 @@ type ProjectMemberRepo interface {
 	GetMember(projectID, userID int) (*model.ProjectMember, error)
 	UpdateMemberRole(projectID, userID int, role string) error
 	RemoveMember(projectID, userID int) error
-	ListMembers(projectID int) ([]model.ProjectMember, error)
+	GetMembersByProject(projectID int) ([]model.ProjectMember, error)
 }
 
 type projectMemberRepo struct {
@@ -109,7 +109,7 @@ func (r *projectMemberRepo) RemoveMember(projectID, userID int) error {
 	return nil
 }
 
-func (r *projectMemberRepo) ListMembers(projectID int) ([]model.ProjectMember, error) {
+func (r *projectMemberRepo) GetMembersByProject(projectID int) ([]model.ProjectMember, error) {
 	var members []model.ProjectMember
 
 	query := `

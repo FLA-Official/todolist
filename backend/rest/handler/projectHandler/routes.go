@@ -11,6 +11,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux, manager *middlewares.Manage
 	mux.Handle("GET /projects",
 		manager.With(
 			http.HandlerFunc(h.GetProjects),
+			h.middlewares.AuthenticateJWT,
 		),
 	) // declaring Route
 
@@ -24,6 +25,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux, manager *middlewares.Manage
 	mux.Handle("GET /projects/{id}",
 		manager.With(
 			http.HandlerFunc(h.GetProjectByID),
+			h.middlewares.AuthenticateJWT,
 		),
 	) // declaring Route
 

@@ -40,7 +40,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		ID:       usr.ID,
 		Username: usr.Username,
 		Fullname: usr.Fullname,
-		Gmail:    usr.Gmail,
+		Email:    usr.Email,
 	})
 	if err != nil {
 		http.Error(w, "internal server error", http.StatusInternalServerError)
