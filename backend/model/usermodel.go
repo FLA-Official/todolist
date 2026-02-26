@@ -2,6 +2,7 @@ package model
 
 import (
 	"errors"
+	"net/mail"
 	"strings"
 	"time"
 )
@@ -10,7 +11,7 @@ type User struct {
 	ID        int       `json:"userid"`
 	Username  string    `json:"username"`
 	Fullname  string    `json:"fullname"`
-	Gmail     string    `json:"gmail"`
+	Email     string    `json:"email"`
 	Password  string    `json:"password"`
 	CreatedAt time.Time `json:"createdat"`
 }
@@ -18,7 +19,7 @@ type User struct {
 func (u *User) Validate() error {
 	u.Username = strings.TrimSpace(u.Username)
 	u.Fullname = strings.TrimSpace(u.Fullname)
-	u.Gmail = strings.TrimSpace(u.Gmail)
+	u.Email = strings.TrimSpace(u.Email)
 	u.Password = strings.TrimSpace(u.Password)
 
 	if u.Username == "" {
@@ -37,13 +38,14 @@ func (u *User) Validate() error {
 		return errors.New("fullname is required")
 	}
 
-	if u.Gmail == "" {
+	if u.Email == "" {
 		return errors.New("email is required")
 	}
 
 	// simple email validation
-	if !strings.Contains(u.Gmail, "@") || !strings.Contains(u.Gmail, ".") {
-		return errors.New("invalid email format")
+	err := validateEmail(u.Email)
+	if err != nil {
+		return err
 	}
 
 	if u.Password == "" {
@@ -54,5 +56,13 @@ func (u *User) Validate() error {
 		return errors.New("password must be at least 6 characters")
 	}
 
+	return nil
+}
+
+func validateEmail(email string) error {
+	_, err := mail.ParseAddress(email)
+	if err != nil {
+		return errors.New("invalid email format")
+	}
 	return nil
 }

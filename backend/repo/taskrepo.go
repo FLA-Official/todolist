@@ -2,8 +2,9 @@ package repo
 
 import (
 	"errors"
-	"time"
 	"todolist/model"
+
+	"github.com/jmoiron/sqlx"
 )
 
 type TaskRepo interface {
@@ -17,12 +18,13 @@ type TaskRepo interface {
 }
 
 type taskRepo struct {
-	tasklist []*model.Task
+	dbCon *sqlx.DB
 }
 
-func NewTaskRepo() TaskRepo {
-	repo := &taskRepo{}
-	return repo
+func NewTaskRepo(dbCon *sqlx.DB) TaskRepo {
+	return &taskRepo{
+		dbCon: dbCon,
+	}
 }
 
 // 	ID          int       `json:"id" gorm:"primaryKey"`
@@ -37,113 +39,127 @@ func NewTaskRepo() TaskRepo {
 // 	EndAt   time.Time `json:"updated_at"`
 
 func (t *taskRepo) CreateTask(task *model.Task) (*model.Task, error) {
-	//adding ID
-	task.ID = len(t.tasklist) + 1
-	//Adding time
-	task.CreatedAt = time.Now()
-	err := task.Validate()
+	if err := task.Validate(); err != nil {
+		return nil, err
+	}
+
+	query := `
+		INSERT INTO tasks 
+		(project_id, title, description, status, priority, assignee_id, end_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		RETURNING id, created_at
+	`
+
+	err := t.dbCon.QueryRow(
+		query,
+		task.ProjectID,
+		task.Title,
+		task.Description,
+		task.Status,
+		task.Priority,
+		task.AssigneeID,
+		task.EndAt,
+	).Scan(&task.ID, &task.CreatedAt)
+
 	if err != nil {
 		return nil, err
-	} else {
-		t.tasklist = append(t.tasklist, task)
 	}
 
 	return task, nil
 }
 
 func (t *taskRepo) GetTaskByID(id int) (*model.Task, error) {
-	for _, task := range t.tasklist {
-		if task.ID == id {
-			return task, nil
-		}
-	}
-	return nil, errors.New("Task not found")
-}
+	var task model.Task
 
-func (t *taskRepo) UpdateTask(utask *model.Task) error {
-	for idx, task := range t.tasklist {
-		if task.ID == utask.ID {
-			utask.CreatedAt = task.CreatedAt
-			t.tasklist[idx] = utask
-			return nil
-		}
+	query := `SELECT * FROM tasks WHERE id = $1`
+
+	err := t.dbCon.Get(&task, query, id)
+	if err != nil {
+		return nil, errors.New("task not found")
 	}
 
-	return errors.New("Task not found")
+	return &task, nil
 }
 
+func (t *taskRepo) UpdateTask(task *model.Task) error {
+	var existing model.Task
+
+	err := t.dbCon.Get(&existing, `SELECT * FROM tasks WHERE id=$1`, task.ID)
+	if err != nil {
+		return errors.New("task not found")
+	}
+
+	// preserve created_at
+	task.CreatedAt = existing.CreatedAt
+
+	if err := task.Validate(); err != nil {
+		return err
+	}
+
+	query := `
+		UPDATE tasks SET
+			project_id=$1,
+			title=$2,
+			description=$3,
+			status=$4,
+			priority=$5,
+			assignee_id=$6,
+			end_at=$7
+		WHERE id=$8
+	`
+
+	_, err = t.dbCon.Exec(
+		query,
+		task.ProjectID,
+		task.Title,
+		task.Description,
+		task.Status,
+		task.Priority,
+		task.AssigneeID,
+		task.EndAt,
+		task.ID,
+	)
+
+	return err
+}
 func (t *taskRepo) DeleteTask(id int) error {
-	var tempList []*model.Task
-
-	for _, task := range t.tasklist {
-		if task.ID != id {
-			tempList = append(tempList, task)
-		}
-	}
-	//to maintain ID order 1,2,3,4....
-	for i := 0; i < len(tempList); i++ {
-		tempList[i].ID = i + 1
+	result, err := t.dbCon.Exec(`DELETE FROM tasks WHERE id=$1`, id)
+	if err != nil {
+		return err
 	}
 
-	t.tasklist = tempList
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return errors.New("task not found")
+	}
 
 	return nil
-
 }
 
 func (t *taskRepo) ListTasks() ([]model.Task, error) {
 	var tasks []model.Task
 
-	if len(t.tasklist) == 0 {
-		return nil, nil
-	} else {
-		for _, task := range t.tasklist {
-			tasks = append(tasks, *task)
-		}
-		return tasks, nil
-	}
-
+	err := t.dbCon.Select(&tasks, `SELECT * FROM tasks`)
+	return tasks, err
 }
 
 func (t *taskRepo) ListTasksByProject(projectID int) ([]model.Task, error) {
-	var tempList []model.Task
+	var tasks []model.Task
 
-	for _, task := range t.tasklist {
-		if task.ProjectID == projectID {
-			tempList = append(tempList, *task)
-		}
-	}
-	if len(tempList) > 0 {
-		return tempList, nil
-	} else {
-		return nil, errors.New("No Task Available under this Project")
+	err := t.dbCon.Select(&tasks, `SELECT * FROM tasks WHERE project_id=$1`, projectID)
+	if len(tasks) == 0 {
+		return nil, errors.New("no tasks found")
 	}
 
+	return tasks, err
 }
-
 func (t *taskRepo) ListTasksByAssignee(assigneeID int) ([]model.Task, error) {
-	var tempList []model.Task
+	var tasks []model.Task
 
-	for _, task := range t.tasklist {
-		if task.AssigneeID != nil && *task.AssigneeID == assigneeID {
-			tempList = append(tempList, *task)
-		}
-	}
-	if len(tempList) > 0 {
-		return tempList, nil
-	} else {
-		return nil, errors.New("No Task is assigned by this assignee")
+	err := t.dbCon.Select(&tasks, `SELECT * FROM tasks WHERE assignee_id=$1`, assigneeID)
+	if len(tasks) == 0 {
+		return nil, errors.New("no tasks found")
 	}
 
+	return tasks, err
 }
-
-// func (t *taskRepo) Completed(id int) error {
-// 	for _, task := range t.tasklist {
-// 		if task.Id == id {
-// 			task.Complete = true
-// 			return nil
-// 		}
-// 	}
-
-// 	return errors.New("Task not found")
-// }

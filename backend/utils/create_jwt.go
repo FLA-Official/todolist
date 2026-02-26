@@ -16,7 +16,7 @@ type Payload struct {
 	ID       int    `json:"id"`
 	Username string `json:"username"`
 	Fullname string `json:"fullname"`
-	Gmail    string `json:"gmail"`
+	Email    string `json:"email"`
 }
 
 func CreateJWT(secret string, data Payload) (string, error) {

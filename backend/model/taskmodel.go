@@ -2,43 +2,73 @@ package model
 
 import (
 	"errors"
-	"strings"
 	"time"
 )
 
+const (
+	StatusTodo       = "todo"
+	StatusInProgress = "in_progress"
+	StatusDone       = "done"
+	PriorityLow      = "low"
+	PriorityMedium   = "medium"
+	PriorityHigh     = "high"
+)
+
 type Task struct {
-	ID          int       `json:"id" gorm:"primaryKey"`
-	ProjectID   int       `json:"project_id"`
-	Project     Project   `json:"project" gorm:"foreignKey:ProjectID"`
-	Title       string    `json:"title"`
-	Description *string   `json:"description,omitempty"`
-	Status      string    `json:"status"`
-	Priority    string    `json:"priority"`
-	AssigneeID  *int      `json:"assignee_id,omitempty"`
-	CreatedAt   time.Time `json:"created_at"`
-	EndAt       time.Time `json:"end_at"`
+	ID          int        `db:"id" json:"id"`
+	ProjectID   int        `db:"project_id" json:"project_id"`
+	Title       string     `db:"title" json:"title"`
+	Description *string    `db:"description" json:"description,omitempty"`
+	Status      string     `db:"status" json:"status"`
+	Priority    string     `db:"priority" json:"priority"`
+	AssigneeID  *int       `db:"assignee_id" json:"assignee_id,omitempty"`
+	CreatedAt   time.Time  `db:"created_at" json:"created_at"`
+	EndAt       *time.Time `db:"end_at" json:"end_at,omitempty"`
 }
 
 func (t *Task) Validate() error {
-	if strings.TrimSpace(t.Title) == "" {
+	if t.Title == "" {
 		return errors.New("title is required")
 	}
 
-	if t.ProjectID == 0 {
-		return errors.New("The task must be under a project")
+	validStatus := map[string]bool{
+		StatusTodo:       true,
+		StatusInProgress: true,
+		StatusDone:       true,
+	}
+	if !validStatus[t.Status] {
+		return errors.New("invalid status")
 	}
 
-	if t.EndAt.IsZero() {
-		return errors.New("End time is required")
+	validPriority := map[string]bool{
+		PriorityLow:    true,
+		PriorityMedium: true,
+		PriorityHigh:   true,
+	}
+	if !validPriority[t.Priority] {
+		return errors.New("invalid priority")
 	}
 
-	if t.EndAt.Before(time.Now()) {
-		return errors.New("End time can not be in past")
+	if t.Status != StatusDone && t.EndAt != nil {
+		return errors.New("end_at only allowed when task is done")
 	}
 
-	if !t.Project.EndAt.IsZero() && t.EndAt.After(t.Project.EndAt) {
-		return errors.New("Task end date cannot be after project end date")
+	if t.Status == StatusDone && t.EndAt == nil {
+		now := time.Now()
+		t.EndAt = &now
 	}
 
 	return nil
+}
+
+func isValidTransition(old, new string) bool {
+	switch old {
+	case StatusTodo:
+		return new == StatusInProgress || new == StatusDone
+	case StatusInProgress:
+		return new == StatusDone
+	case StatusDone:
+		return false
+	}
+	return false
 }

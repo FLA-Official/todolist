@@ -15,11 +15,11 @@ type Config struct {
 	ServiceName  string
 	HttpPort     int
 	JWTSecretKey string
-	DBuser       string
-	DBpassword   string
-	Host         string
-	port         int
-	dbname       string
+	DBUser       string
+	DBPassword   string
+	DBHost       string
+	DBPort       int
+	DBName       string
 }
 
 // user=fla password=FL@pon676701234 host=localhost port=5432 dbname=todo_db
@@ -96,6 +96,12 @@ func loadConfig() {
 		os.Exit(1)
 	}
 
+	DBport, err := strconv.Atoi(dbport)
+	if err != nil {
+		fmt.Println("PORT must be number in env")
+		os.Exit(1)
+	}
+
 	dbname := os.Getenv("DB_NAME")
 	if dbname == "" {
 		fmt.Println("Database Name is required")
@@ -107,6 +113,11 @@ func loadConfig() {
 		ServiceName:  serviceName,
 		HttpPort:     port,
 		JWTSecretKey: jwtSecretKey,
+		DBUser:       dbusername,
+		DBPassword:   dbpassword,
+		DBHost:       dbhost,
+		DBPort:       DBport,
+		DBName:       dbname,
 	}
 
 }

@@ -3,8 +3,9 @@ package repo
 import (
 	"errors"
 	"fmt"
-	"time"
 	"todolist/model"
+
+	"github.com/jmoiron/sqlx"
 )
 
 type ProjectRepo interface {
@@ -17,12 +18,11 @@ type ProjectRepo interface {
 }
 
 type projectRepo struct {
-	projectList []*model.Project
+	dbCon *sqlx.DB
 }
 
-func NewProjectRepo() ProjectRepo {
-	repo := &projectRepo{}
-	return repo
+func NewProjectRepo(dbCon *sqlx.DB) ProjectRepo {
+	return &projectRepo{dbCon: dbCon}
 }
 
 // ID          int       `json:"id"`
@@ -33,80 +33,107 @@ func NewProjectRepo() ProjectRepo {
 // 	CreatedAt   time.Time `json:"created_at"`
 
 func (p *projectRepo) CreateProject(project *model.Project) error {
-	//adding ID
-	project.ID = len(p.projectList) + 1
-	//Adding time
-	project.CreatedAt = time.Now()
-	err := project.Validate()
-	if err != nil {
+	if err := project.Validate(); err != nil {
 		return err
-	} else {
-		p.projectList = append(p.projectList, project)
 	}
 
-	return nil
+	query := `
+		INSERT INTO projects 
+		(name, key, description, owner_id, partner, end_at)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		RETURNING id, created_at
+	`
+
+	return p.dbCon.QueryRow(
+		query,
+		project.Name,
+		project.Key,
+		project.Description,
+		project.OwnerID,
+		project.Partner,
+		project.EndAt,
+	).Scan(&project.ID, &project.CreatedAt)
 }
 
 func (p *projectRepo) GetProjectByID(id int) (*model.Project, error) {
-	for _, project := range p.projectList {
-		if project.ID == id {
-			return project, nil
-		}
+	var project model.Project
+
+	err := p.dbCon.Get(&project, `SELECT * FROM projects WHERE id=$1`, id)
+	if err != nil {
+		return nil, errors.New("project not found")
 	}
-	return nil, errors.New("Task not found")
+
+	return &project, nil
 }
 
-func (p *projectRepo) UpdateProject(uproject *model.Project) error {
-	for idx, project := range p.projectList {
-		if project.ID == uproject.ID {
-			uproject.CreatedAt = project.CreatedAt
-			p.projectList[idx] = uproject
-			return nil
-		}
+func (p *projectRepo) UpdateProject(project *model.Project) error {
+	var existing model.Project
+
+	err := p.dbCon.Get(&existing, `SELECT * FROM projects WHERE id=$1`, project.ID)
+	if err != nil {
+		return errors.New("project not found")
 	}
 
-	return errors.New("Project not found")
+	// preserve created_at
+	project.CreatedAt = existing.CreatedAt
+
+	if err := project.Validate(); err != nil {
+		return err
+	}
+
+	query := `
+		UPDATE projects SET
+			name=$1,
+			key=$2,
+			description=$3,
+			owner_id=$4,
+			partner=$5,
+			end_at=$6
+		WHERE id=$7
+	`
+
+	_, err = p.dbCon.Exec(
+		query,
+		project.Name,
+		project.Key,
+		project.Description,
+		project.OwnerID,
+		project.Partner,
+		project.EndAt,
+		project.ID,
+	)
+
+	return err
 }
 
 func (p *projectRepo) DeleteProject(id int) error {
-	var tempList []*model.Project
-
-	for _, project := range p.projectList {
-		if project.ID != id {
-			tempList = append(tempList, project)
-		}
-	}
-	//to maintain ID order 1,2,3,4....
-	for i := 0; i < len(tempList); i++ {
-		tempList[i].ID = i + 1
+	result, err := p.dbCon.Exec(`DELETE FROM projects WHERE id=$1`, id)
+	if err != nil {
+		return err
 	}
 
-	p.projectList = tempList
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return errors.New("project not found")
+	}
 
 	return nil
-
 }
 
 func (p *projectRepo) ListProjects() ([]model.Project, error) {
 	var projects []model.Project
-	for _, project := range p.projectList {
-		projects = append(projects, *project)
-	}
-	return projects, nil
+
+	err := p.dbCon.Select(&projects, `SELECT * FROM projects`)
+	return projects, err
 }
 
 func (p *projectRepo) ListProjectsByOwner(ownerID int) ([]model.Project, error) {
-	var tempList []model.Project
+	var projects []model.Project
 
-	for _, project := range p.projectList {
-		if project.OwnerID == ownerID {
-			tempList = append(tempList, *project)
-		}
-	}
-	if len(tempList) > 0 {
-		return tempList, nil
-	} else {
-		return nil, fmt.Errorf("Owener with the ID:%d Does not have any Project", ownerID)
+	err := p.dbCon.Select(&projects, `SELECT * FROM projects WHERE owner_id=$1`, ownerID)
+	if len(projects) == 0 {
+		return nil, fmt.Errorf("owner %d has no projects", ownerID)
 	}
 
+	return projects, err
 }

@@ -7,11 +7,18 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-func GetConnectionDB(cfg config.Config) string {
-	return "user=fla password=FL@pon676701234 host=localhost port=5432 dbname=todo_db "
+func GetConnectionDB(cfg *config.Config) string {
+	return fmt.Sprintf(
+		"user=%s password=%s host=%s port=%d dbname=%s sslmode=disable",
+		cfg.DBUser,
+		cfg.DBPassword,
+		cfg.DBHost,
+		cfg.DBPort,
+		cfg.DBName,
+	)
 }
 
-func NewConnection(cfg config.Config) (*sqlx.DB, error) {
+func NewConnection(cfg *config.Config) (*sqlx.DB, error) {
 	dbsource := GetConnectionDB(cfg)
 	dbCon, err := sqlx.Connect("postgres", dbsource)
 
