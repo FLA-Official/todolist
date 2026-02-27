@@ -3,8 +3,10 @@ package repo
 import (
 	"errors"
 	"todolist/model"
+	"todolist/utils"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 )
 
 type UserRepo interface {
@@ -14,16 +16,8 @@ type UserRepo interface {
 	UpdateUser(user *model.User) error
 	DeleteUser(id int) error
 	ListUsers() ([]model.User, error)
-	Find(email, password string) (*model.User, error)
+	Find(email string) (*model.User, error)
 }
-
-// ID        int       `json:"userid"`
-// Username  string    `json:"username"`
-// Fullname  string    `json:"fullname"`
-// Gmail     string    `json:"gmail"`
-// Password  string    `json:"password"`
-// Role      string    `json:"role"` // developer, superviser, Admin, viewer
-// Createdat time.Time `json:"createdat"`
 
 type userRepo struct {
 	dbCon *sqlx.DB
@@ -40,11 +34,16 @@ func (u *userRepo) CreateUser(user *model.User) error {
 	if err != nil {
 		return err
 	}
+	hashedPassword, err := utils.HashPassword(user.Password)
+	if err != nil {
+		return err
+	}
+	user.Password = hashedPassword
 
 	query := `
-	INSERT INTO users (username, fullname, gmail, password, role)
-	VALUES ($1, $2, $3, $4, $5)
-	RETURNING id, createdat;
+	INSERT INTO users (user_name, full_name, email, password)
+	VALUES ($1, $2, $3, $4)
+	RETURNING id, created_at, updated_at;
 	`
 
 	return u.dbCon.QueryRow(
@@ -53,7 +52,7 @@ func (u *userRepo) CreateUser(user *model.User) error {
 		user.Fullname,
 		user.Email,
 		user.Password,
-	).Scan(&user.ID, &user.CreatedAt)
+	).Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
 }
 
 func (u *userRepo) GetUserByID(id int) (*model.User, error) {
@@ -63,7 +62,12 @@ func (u *userRepo) GetUserByID(id int) (*model.User, error) {
 
 	err := u.dbCon.Get(&user, query, id)
 	if err != nil {
-		return nil, errors.New("user not found")
+		if pqErr, ok := err.(*pq.Error); ok {
+			if pqErr.Code == "23505" {
+				return nil, errors.New("username or email already exists")
+			}
+		}
+		return nil, err
 	}
 
 	return &user, nil
@@ -144,17 +148,17 @@ func (u *userRepo) ListUsers() ([]model.User, error) {
 	return users, nil
 }
 
-func (u *userRepo) Find(email, password string) (*model.User, error) {
+func (u *userRepo) Find(email string) (*model.User, error) {
 	var user model.User
 
 	query := `
 	SELECT * FROM users 
-	WHERE gmail=$1 AND password=$2
+	WHERE email=$1 
 	`
 
-	err := u.dbCon.Get(&user, query, email, password)
+	err := u.dbCon.Get(&user, query, email)
 	if err != nil {
-		return nil, errors.New("invalid credentials")
+		return nil, errors.New("No user with this email")
 	}
 
 	return &user, nil

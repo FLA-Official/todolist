@@ -27,10 +27,15 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid Request", http.StatusBadRequest)
 		return
 	}
-	usr, err := h.userrepo.Find(reqlogin.Email, reqlogin.Password)
+	usr, err := h.userrepo.Find(reqlogin.Email)
 
 	if err != nil {
 		http.Error(w, "Invalid Credentials", http.StatusBadRequest)
+		return
+	}
+
+	if err := utils.CheckPassword(usr.Password, reqlogin.Password); err != nil {
+		http.Error(w, "Invalid Credentials", http.StatusUnauthorized)
 		return
 	}
 

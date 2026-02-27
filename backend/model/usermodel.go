@@ -8,19 +8,18 @@ import (
 )
 
 type User struct {
-	ID        int       `json:"userid"`
-	Username  string    `json:"username"`
-	Fullname  string    `json:"fullname"`
-	Email     string    `json:"email"`
-	Password  string    `json:"password"`
-	CreatedAt time.Time `json:"createdat"`
+	ID        int       `db:"id" json:"userid"`
+	Username  string    `db:"user_name" json:"username"`
+	Fullname  string    `db:"full_name" json:"fullname"`
+	Email     string    `db:"email" json:"email"`
+	Password  string    `db:"password" json:"password"`
+	CreatedAt time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
 }
 
 func (u *User) Validate() error {
 	u.Username = strings.TrimSpace(u.Username)
-	u.Fullname = strings.TrimSpace(u.Fullname)
 	u.Email = strings.TrimSpace(u.Email)
-	u.Password = strings.TrimSpace(u.Password)
 
 	if u.Username == "" {
 		return errors.New("username is required")

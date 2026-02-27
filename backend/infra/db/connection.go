@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"todolist/config"
 
+	_ "github.com/lib/pq"
+
 	"github.com/jmoiron/sqlx"
 )
 

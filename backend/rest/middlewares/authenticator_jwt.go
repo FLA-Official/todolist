@@ -1,8 +1,10 @@
 package middlewares
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
+	"encoding/json"
 	"net/http"
 	"strings"
 	"todolist/utils"
@@ -61,8 +63,23 @@ func (m *Middlewares) AuthenticateJWT(next http.Handler) http.Handler {
 			http.Error(w, "Unauthorized, Hacker Detected", http.StatusUnauthorized)
 			return
 		}
+		// ✅ decode payload JSON into utils.Payload struct
+		payloadJSON, err := utils.Base64UrlDecode(jwtPayload)
+		if err != nil {
+			http.Error(w, "Invalid JWT payload", http.StatusUnauthorized)
+			return
+		}
+
+		var payload utils.Payload
+		if err := json.Unmarshal(payloadJSON, &payload); err != nil {
+			http.Error(w, "Invalid JWT payload", http.StatusUnauthorized)
+			return
+		}
+
+		// ✅ store payload in context so handlers can access
+		ctx := context.WithValue(r.Context(), "user", payload)
 
 		// JWT is valid, pass to next handler
-		next.ServeHTTP(w, r)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

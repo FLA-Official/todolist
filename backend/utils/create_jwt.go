@@ -64,3 +64,17 @@ func CreateJWT(secret string, data Payload) (string, error) {
 func Base64UrlEncode(data []byte) string {
 	return base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(data)
 }
+
+// Base64UrlDecode decodes a base64 URL-encoded string
+func Base64UrlDecode(s string) ([]byte, error) {
+	// Base64 URL encoding sometimes omits padding, so we need to add it back
+	switch len(s) % 4 {
+	case 2:
+		s += "=="
+	case 3:
+		s += "="
+	}
+
+	// decode using URLEncoding (uses - and _ instead of + and /)
+	return base64.URLEncoding.DecodeString(s)
+}

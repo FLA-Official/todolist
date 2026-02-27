@@ -8,7 +8,7 @@ import (
 // RegisterRoutes registers user-related routes on the provided mux.
 func (h *Handler) RegisterRoutes(mux *http.ServeMux, manager *middlewares.Manager) {
 	// declaring Route for users
-	mux.Handle("POST /users",
+	mux.Handle("POST /signup",
 		manager.With(
 			http.HandlerFunc(h.CreateUserHandler),
 		),
