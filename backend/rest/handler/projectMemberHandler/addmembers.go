@@ -7,18 +7,18 @@ import (
 	"todolist/model"
 )
 
+var input struct {
+	UserID int    `json:"user_id"`
+	Role   string `json:"role"`
+}
+
 // CreateProjectHandler handles POST /projects and adds a new project to the database.
 func (h *Handler) AddMemberHandler(w http.ResponseWriter, r *http.Request) {
-	projectIDStr := r.PathValue("projectId")
+	projectIDStr := r.PathValue("projectID")
 	projectID, err := strconv.Atoi(projectIDStr)
 	if err != nil {
 		http.Error(w, "invalid projectId", http.StatusBadRequest)
 		return
-	}
-
-	var input struct {
-		UserID int    `json:"user_id"`
-		Role   string `json:"role"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {

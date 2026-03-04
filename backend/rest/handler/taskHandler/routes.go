@@ -7,10 +7,16 @@ import (
 
 // RegisterRoutes registers product-related routes on the provided mux.
 func (h *Handler) RegisterRoutes(mux *http.ServeMux, manager *middlewares.Manager) {
+	mux.Handle("GET /tasks",
+		manager.With(
+			http.HandlerFunc(h.GetAllTasks),
+			h.middlewares.AuthenticateJWT,
+		),
+	)
 
 	mux.Handle("GET /projects/{projectid}/tasks",
 		manager.With(
-			http.HandlerFunc(h.GetTasks),
+			http.HandlerFunc(h.GetProjectTasks),
 			h.middlewares.AuthenticateJWT,
 		),
 	) // declaring Route
@@ -22,21 +28,21 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux, manager *middlewares.Manage
 		),
 	) // declaring Route
 
-	mux.Handle("GET /tasks/{taskid}",
+	mux.Handle("GET /projects/{projectid}/tasks/{taskid}",
 		manager.With(
 			http.HandlerFunc(h.GetTaskByID),
 			h.middlewares.AuthenticateJWT,
 		),
 	) // declaring Route
 
-	mux.Handle("PUT /tasks/{taskid}",
+	mux.Handle("PUT /projects/{projectid}/tasks/{taskid}",
 		manager.With(
 			http.HandlerFunc(h.UpdateTask),
 			h.middlewares.AuthenticateJWT,
 		),
 	) // declaring Route
 
-	mux.Handle("DELETE /tasks/{taskid}",
+	mux.Handle("DELETE /projects/{projectid}/tasks/{taskid}",
 		manager.With(
 			http.HandlerFunc(h.DeleteTask),
 			h.middlewares.AuthenticateJWT,

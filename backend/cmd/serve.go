@@ -28,9 +28,10 @@ func Serve() {
 	taskrepo := repo.NewTaskRepo(dbCon)
 	userrepo := repo.NewUserRepo(dbCon)
 	projectrepo := repo.NewProjectRepo(dbCon)
+	projectmemberrepo := repo.NewProjectMemberRepo(dbCon)
 	// projectmemberrepo := repo.NewProjectMemberRepo(dbCon)
 
-	taskhandler := taskHandler.NewHandler(m, taskrepo)
+	taskhandler := taskHandler.NewHandler(m, taskrepo, projectrepo, projectmemberrepo)
 	userhandler := userHandler.NewHandler(m, userrepo)
 	projectHandler := projectHandler.NewHandler(m, projectrepo)
 

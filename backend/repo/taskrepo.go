@@ -9,11 +9,11 @@ import (
 
 type TaskRepo interface {
 	CreateTask(task *model.Task) (*model.Task, error)
-	GetTaskByID(id int) (*model.Task, error)
-	UpdateTask(task *model.Task) error
-	DeleteTask(id int) error
-	ListTasks() ([]model.Task, error)
-	ListTasksByProject(projectID int) ([]model.Task, error)
+	GetTaskByID(taskID int, userID int) (*model.Task, error)
+	UpdateTask(task *model.Task, userID int) error
+	DeleteTask(taskID int, userID int) error
+	ListTasks(userID int) ([]model.Task, error)
+	ListTasksByProjectAndUser(projectID int, userID int) ([]model.Task, error)
 	ListTasksByAssignee(assigneeID int) ([]model.Task, error)
 }
 
@@ -68,90 +68,119 @@ func (t *taskRepo) CreateTask(task *model.Task) (*model.Task, error) {
 	return task, nil
 }
 
-func (t *taskRepo) GetTaskByID(id int) (*model.Task, error) {
+func (r *taskRepo) GetTaskByID(taskID int, userID int) (*model.Task, error) {
+
 	var task model.Task
 
-	query := `SELECT * FROM tasks WHERE id = $1`
+	query := `
+	SELECT t.*
+	FROM tasks t
+	JOIN projects p ON t.project_id = p.id
+	WHERE t.id = $1 AND p.owner_id = $2
+	`
 
-	err := t.dbCon.Get(&task, query, id)
+	err := r.dbCon.Get(&task, query, taskID, userID)
 	if err != nil {
-		return nil, errors.New("task not found")
+		return nil, nil // not found or not allowed
 	}
 
 	return &task, nil
 }
 
-func (t *taskRepo) UpdateTask(task *model.Task) error {
-	var existing model.Task
-
-	err := t.dbCon.Get(&existing, `SELECT * FROM tasks WHERE id=$1`, task.ID)
-	if err != nil {
-		return errors.New("task not found")
-	}
-
-	// preserve created_at
-	task.CreatedAt = existing.CreatedAt
-
-	if err := task.Validate(); err != nil {
-		return err
-	}
+func (r *taskRepo) UpdateTask(task *model.Task, userID int) error {
 
 	query := `
-		UPDATE tasks SET
-			project_id=$1,
-			title=$2,
-			description=$3,
-			status=$4,
-			priority=$5,
-			assignee_id=$6,
-			end_at=$7
-		WHERE id=$8
+	UPDATE tasks t
+	SET title = $1,
+	    description = $2,
+	    status = $3
+	FROM projects p
+	WHERE t.project_id = p.id
+	AND t.id = $4
+	AND p.owner_id = $5
 	`
 
-	_, err = t.dbCon.Exec(
-		query,
-		task.ProjectID,
+	result, err := r.dbCon.Exec(query,
 		task.Title,
 		task.Description,
 		task.Status,
-		task.Priority,
-		task.AssigneeID,
-		task.EndAt,
 		task.ID,
+		userID,
 	)
 
-	return err
-}
-func (t *taskRepo) DeleteTask(id int) error {
-	result, err := t.dbCon.Exec(`DELETE FROM tasks WHERE id=$1`, id)
 	if err != nil {
 		return err
 	}
 
 	rows, _ := result.RowsAffected()
 	if rows == 0 {
-		return errors.New("task not found")
+		return errors.New("not allowed or task not found")
+	}
+
+	return nil
+}
+func (t *taskRepo) DeleteTask(taskID int, userID int) error {
+
+	query := `
+	DELETE FROM tasks
+	USING projects
+	WHERE tasks.project_id = projects.id
+	AND tasks.id = $1
+	AND projects.owner_id = $2
+	`
+
+	result, err := t.dbCon.Exec(query, taskID, userID)
+	if err != nil {
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rows == 0 {
+		return errors.New("task not found or unauthorized")
 	}
 
 	return nil
 }
 
-func (t *taskRepo) ListTasks() ([]model.Task, error) {
+func (r *taskRepo) ListTasks(userID int) ([]model.Task, error) {
+
 	var tasks []model.Task
 
-	err := t.dbCon.Select(&tasks, `SELECT * FROM tasks`)
+	query := `
+	SELECT t.*
+	FROM tasks t
+	JOIN projects p ON t.project_id = p.id
+	WHERE p.owner_id = $1
+	`
+
+	err := r.dbCon.Select(&tasks, query, userID)
 	return tasks, err
 }
 
-func (t *taskRepo) ListTasksByProject(projectID int) ([]model.Task, error) {
+func (r *taskRepo) ListTasksByProjectAndUser(projectID int, userID int) ([]model.Task, error) {
 	var tasks []model.Task
 
-	err := t.dbCon.Select(&tasks, `SELECT * FROM tasks WHERE project_id=$1`, projectID)
-	if len(tasks) == 0 {
-		return nil, errors.New("no tasks found")
+	query := `
+	SELECT t.*
+	FROM tasks t
+	JOIN projects p ON t.project_id = p.id
+	WHERE t.project_id = $1 AND p.owner_id = $2
+	`
+
+	err := r.dbCon.Select(&tasks, query, projectID, userID)
+	if err != nil {
+		return nil, err
 	}
 
-	return tasks, err
+	if len(tasks) == 0 {
+		return nil, errors.New("no tasks found or unauthorized")
+	}
+
+	return tasks, nil
 }
 func (t *taskRepo) ListTasksByAssignee(assigneeID int) ([]model.Task, error) {
 	var tasks []model.Task

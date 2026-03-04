@@ -6,8 +6,14 @@ import (
 )
 
 // GetTasks handles GET /tasks and returns a list of all tasks.
-func (h *Handler) GetTasks(w http.ResponseWriter, r *http.Request) {
-	allTask, err := h.taskrepo.ListTasks()
+func (h *Handler) GetAllTasks(w http.ResponseWriter, r *http.Request) {
+
+	// extract user
+	payload := r.Context().Value("user").(utils.Payload)
+	userID := payload.ID
+
+	// pass userID
+	allTask, err := h.taskrepo.ListTasks(userID)
 
 	if err != nil && len(allTask) == 0 {
 		http.Error(w, "No Task Available", http.StatusNotFound)
