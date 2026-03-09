@@ -1,20 +1,20 @@
 package userHandler
 
 import (
-	"todolist/repo"
 	"todolist/rest/middlewares"
+	"todolist/service"
 )
 
 // Handler handles product-related HTTP requests.
 type Handler struct {
 	middlewares *middlewares.Middlewares
-	userrepo    repo.UserRepo
+	userService service.UserService
 }
 
 // NewHandler constructs a new product Handler with the provided middlewares.
-func NewHandler(middlewares *middlewares.Middlewares, userrepo repo.UserRepo) *Handler {
+func NewHandler(middlewares *middlewares.Middlewares, userService service.UserService) *Handler {
 	return &Handler{
 		middlewares: middlewares,
-		userrepo:    userrepo,
+		userService: userService,
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 	"todolist/model"
+	"todolist/utils"
 )
 
 var input struct {
@@ -14,6 +15,12 @@ var input struct {
 
 // CreateProjectHandler handles POST /projects and adds a new project to the database.
 func (h *Handler) AddMemberHandler(w http.ResponseWriter, r *http.Request) {
+	user, ok := r.Context().Value("user").(utils.Payload)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	projectIDStr := r.PathValue("projectID")
 	projectID, err := strconv.Atoi(projectIDStr)
 	if err != nil {
@@ -32,7 +39,7 @@ func (h *Handler) AddMemberHandler(w http.ResponseWriter, r *http.Request) {
 		Role:      input.Role,
 	}
 
-	if err := h.projectmemberrepo.AddMember(member); err != nil {
+	if err := h.projectMemberService.AddMember(member, user.ID); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}

@@ -11,6 +11,7 @@ import (
 	"todolist/rest/handler/taskHandler"
 	"todolist/rest/handler/userHandler"
 	"todolist/rest/middlewares"
+	"todolist/service"
 )
 
 func Serve() {
@@ -29,11 +30,16 @@ func Serve() {
 	userrepo := repo.NewUserRepo(dbCon)
 	projectrepo := repo.NewProjectRepo(dbCon)
 	projectmemberrepo := repo.NewProjectMemberRepo(dbCon)
+
+	userService := service.NewUserService(userrepo)
+	projectService := service.NewProjectService(projectrepo, projectmemberrepo)
+	projectMemberService := service.NewProjectMemberService(projectmemberrepo, projectrepo)
+	taskService := service.NewTaskService(taskrepo, projectrepo, projectmemberrepo)
 	// projectmemberrepo := repo.NewProjectMemberRepo(dbCon)
 
-	taskhandler := taskHandler.NewHandler(m, taskrepo, projectrepo, projectmemberrepo)
-	userhandler := userHandler.NewHandler(m, userrepo)
-	projectHandler := projectHandler.NewHandler(m, projectrepo)
+	taskhandler := taskHandler.NewHandler(m, *taskService, *projectService, *projectMemberService)
+	userhandler := userHandler.NewHandler(m, *userService)
+	projectHandler := projectHandler.NewHandler(m, *projectService)
 
 	server := rest.NewServer(cnf, taskhandler, userhandler, projectHandler)
 

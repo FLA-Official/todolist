@@ -27,7 +27,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid Request", http.StatusBadRequest)
 		return
 	}
-	usr, err := h.userrepo.Find(reqlogin.Email)
+	usr, err := h.userService.Login(reqlogin.Email, reqlogin.Password)
 
 	if err != nil {
 		http.Error(w, "Invalid Credentials", http.StatusBadRequest)

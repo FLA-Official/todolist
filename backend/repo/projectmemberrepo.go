@@ -13,6 +13,7 @@ type ProjectMemberRepo interface {
 	UpdateMemberRole(projectID, userID int, role string) error
 	RemoveMember(projectID, userID int) error
 	GetMembersByProject(projectID int) ([]model.ProjectMember, error)
+	GetUserRole(projectID, userID int) (string, error)
 }
 
 type projectMemberRepo struct {
@@ -123,4 +124,22 @@ func (r *projectMemberRepo) GetMembersByProject(projectID int) ([]model.ProjectM
 	}
 
 	return members, err
+}
+
+func (r *projectMemberRepo) GetUserRole(projectID, userID int) (string, error) {
+
+	var role string
+
+	query := `
+	SELECT role
+	FROM project_members
+	WHERE project_id=$1 AND user_id=$2
+	`
+
+	err := r.dbCon.Get(&role, query, projectID, userID)
+	if err != nil {
+		return "", errors.New("user is not a member of this project")
+	}
+
+	return role, nil
 }

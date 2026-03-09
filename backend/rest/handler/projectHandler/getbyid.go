@@ -8,6 +8,12 @@ import (
 
 // GetProjectByID handles GET /projects/{id} and returns the requested project if found.
 func (h *Handler) GetProjectByID(w http.ResponseWriter, r *http.Request) {
+
+	user, ok := r.Context().Value("user").(utils.Payload)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 	// creating encoder object
 	projectID := r.PathValue("id")
 
@@ -18,7 +24,7 @@ func (h *Handler) GetProjectByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	project, err := h.projectrepo.GetProjectByID(id)
+	project, err := h.projectService.GetProject(id, user.ID)
 	if err != nil {
 		http.Error(w, "Error retrieving project", http.StatusInternalServerError)
 		return

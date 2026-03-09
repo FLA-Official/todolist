@@ -34,7 +34,7 @@ func (h *Handler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 
 	newTask.ID = id
 
-	err = h.taskrepo.UpdateTask(&newTask, userID)
+	err = h.taskService.UpdateTask(&newTask, userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusForbidden)
 		return

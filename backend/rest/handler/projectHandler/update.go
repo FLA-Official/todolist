@@ -28,7 +28,7 @@ func (h *Handler) UpdateProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch existing project
-	existingProject, err := h.projectrepo.GetProjectByID(id)
+	existingProject, err := h.projectService.GetProject(id, user.ID)
 	if err != nil {
 		http.Error(w, "Project not found", http.StatusNotFound)
 		return
@@ -59,7 +59,7 @@ func (h *Handler) UpdateProject(w http.ResponseWriter, r *http.Request) {
 	// prevent user from manually setting past created_at or owner_id
 
 	// Update
-	err = h.projectrepo.UpdateProject(&newProject)
+	err = h.projectService.UpdateProject(&newProject, user.ID)
 	if err != nil {
 		http.Error(w, "Error updating project", http.StatusInternalServerError)
 		return

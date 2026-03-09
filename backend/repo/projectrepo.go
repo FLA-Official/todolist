@@ -12,7 +12,7 @@ type ProjectRepo interface {
 	CreateProject(project *model.Project) error
 	GetProjectByID(id int) (*model.Project, error)
 	UpdateProject(project *model.Project) error
-	DeleteProject(id int) error
+	DeleteProject(projectID int) error
 	ListProjects() ([]model.Project, error)
 	ListProjectsByOwner(ownerID int) ([]model.Project, error)
 }
@@ -33,26 +33,42 @@ func NewProjectRepo(dbCon *sqlx.DB) ProjectRepo {
 // 	CreatedAt   time.Time `json:"created_at"`
 
 func (p *projectRepo) CreateProject(project *model.Project) error {
-	if err := project.Validate(); err != nil {
+	tx, err := p.dbCon.Beginx()
+	if err != nil {
 		return err
 	}
 
 	query := `
-		INSERT INTO projects 
-		(name, key, description, owner_id, partner, end_at)
-		VALUES ($1, $2, $3, $4, $5, $6)
-		RETURNING id, created_at
+	INSERT INTO projects (name, key, description, owner_id)
+	VALUES ($1, $2, $3, $4)
+	RETURNING id, created_at
 	`
 
-	return p.dbCon.QueryRow(
+	err = tx.QueryRow(
 		query,
 		project.Name,
 		project.Key,
 		project.Description,
 		project.OwnerID,
-		project.Partner,
-		project.EndAt,
 	).Scan(&project.ID, &project.CreatedAt)
+
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// ADD OWNER TO MEMBERS TABLE
+	_, err = tx.Exec(`
+	INSERT INTO project_members (project_id, user_id, role)
+	VALUES ($1, $2, 'owner')
+	`, project.ID, project.OwnerID)
+
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit()
 }
 
 func (p *projectRepo) GetProjectByID(id int) (*model.Project, error) {
@@ -106,18 +122,14 @@ func (p *projectRepo) UpdateProject(project *model.Project) error {
 	return err
 }
 
-func (p *projectRepo) DeleteProject(id int) error {
-	result, err := p.dbCon.Exec(`DELETE FROM projects WHERE id=$1`, id)
-	if err != nil {
-		return err
-	}
+func (p *projectRepo) DeleteProject(projectID int) error {
 
-	rows, _ := result.RowsAffected()
-	if rows == 0 {
-		return errors.New("project not found")
-	}
+	_, err := p.dbCon.Exec(
+		`DELETE FROM projects WHERE id=$1`,
+		projectID,
+	)
 
-	return nil
+	return err
 }
 
 func (p *projectRepo) ListProjects() ([]model.Project, error) {
@@ -136,4 +148,19 @@ func (p *projectRepo) ListProjectsByOwner(ownerID int) ([]model.Project, error) 
 	}
 
 	return projects, err
+}
+
+// Check owner
+func (p *projectRepo) IsOwner(projectID, userID int) (bool, error) {
+	var exists bool
+
+	query := `
+	SELECT EXISTS (
+		SELECT 1 FROM projects
+		WHERE id=$1 AND owner_id=$2
+	)
+	`
+
+	err := p.dbCon.Get(&exists, query, projectID, userID)
+	return exists, err
 }

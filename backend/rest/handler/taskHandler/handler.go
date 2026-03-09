@@ -1,24 +1,24 @@
 package taskHandler
 
 import (
-	"todolist/repo"
 	"todolist/rest/middlewares"
+	"todolist/service"
 )
 
 // Handler handles product-related HTTP requests.
 type Handler struct {
-	middlewares       *middlewares.Middlewares
-	taskrepo          repo.TaskRepo
-	projectrepo       repo.ProjectRepo
-	projectMemberRepo repo.ProjectMemberRepo
+	middlewares          *middlewares.Middlewares
+	taskService          service.TaskService
+	projectService       service.ProjectService
+	projectMemberService service.ProjectMemberService
 }
 
 // NewHandler constructs a new product Handler with the provided middlewares.
-func NewHandler(middlewares *middlewares.Middlewares, taskrepo repo.TaskRepo, projectrepo repo.ProjectRepo, projectMemberRepo repo.ProjectMemberRepo) *Handler {
+func NewHandler(middlewares *middlewares.Middlewares, taskService service.TaskService, projectService service.ProjectService, projectMemberService service.ProjectMemberService) *Handler {
 	return &Handler{
-		middlewares:       middlewares,
-		taskrepo:          taskrepo,
-		projectrepo:       projectrepo,
-		projectMemberRepo: projectMemberRepo,
+		middlewares:          middlewares,
+		taskService:          taskService,
+		projectService:       projectService,
+		projectMemberService: projectMemberService,
 	}
 }

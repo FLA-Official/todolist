@@ -24,7 +24,7 @@ func (h *Handler) DeleteProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch project from DB
-	project, err := h.projectrepo.GetProjectByID(id)
+	project, err := h.projectService.GetProject(id, user.ID)
 	if err != nil {
 		http.Error(w, "Project not found", http.StatusNotFound)
 		return
@@ -37,7 +37,7 @@ func (h *Handler) DeleteProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Delete project
-	err = h.projectrepo.DeleteProject(id)
+	err = h.projectService.DeleteProject(id, user.ID)
 	if err != nil {
 		http.Error(w, "Error deleting project", http.StatusInternalServerError)
 		return

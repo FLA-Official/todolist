@@ -13,7 +13,7 @@ func (h *Handler) GetProjects(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	projects, err := h.projectrepo.ListProjectsByOwner(user.ID)
+	projects, err := h.projectService.ListUserProjects(user.ID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return

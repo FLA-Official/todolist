@@ -15,7 +15,7 @@ func (h *Handler) GetMembersByProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	members, err := h.projectmemberrepo.GetMembersByProject(projectID)
+	members, err := h.projectMemberService.GetProjectMembers(projectID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return

@@ -1,20 +1,20 @@
 package projectMemberHandler
 
 import (
-	"todolist/repo"
 	"todolist/rest/middlewares"
+	"todolist/service"
 )
 
 // Handler handles project-related HTTP requests.
 type Handler struct {
-	middlewares       *middlewares.Middlewares
-	projectmemberrepo repo.ProjectMemberRepo
+	middlewares          *middlewares.Middlewares
+	projectMemberService service.ProjectMemberService
 }
 
 // NewHandler constructs a new project Handler with the provided middlewares.
-func NewHandler(middlewares *middlewares.Middlewares, projectmemberrepo repo.ProjectMemberRepo) *Handler {
+func NewHandler(middlewares *middlewares.Middlewares, projectMemberService service.ProjectMemberService) *Handler {
 	return &Handler{
-		middlewares:       middlewares,
-		projectmemberrepo: projectmemberrepo,
+		middlewares:          middlewares,
+		projectMemberService: projectMemberService,
 	}
 }

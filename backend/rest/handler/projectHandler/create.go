@@ -24,7 +24,7 @@ func (h *Handler) CreateProjectHandler(w http.ResponseWriter, r *http.Request) {
 	user := r.Context().Value("user").(utils.Payload) // JWT payload
 	newProject.OwnerID = user.ID                      // automatically assign owner
 
-	err = h.projectrepo.CreateProject(&newProject)
+	err = h.projectService.CreateProject(&newProject)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

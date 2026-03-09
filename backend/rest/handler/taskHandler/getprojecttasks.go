@@ -21,7 +21,7 @@ func (h *Handler) GetProjectTasks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check ownership + fetch tasks
-	allTask, err := h.taskrepo.ListTasksByProjectAndUser(projectID, userID)
+	allTask, err := h.taskService.GetProjectTasks(projectID, userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return

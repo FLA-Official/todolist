@@ -27,7 +27,7 @@ func (h *Handler) CreateTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check project exists
-	project, err := h.projectrepo.GetProjectByID(projectID)
+	project, err := h.projectService.GetProject(projectID, user.ID)
 	if err != nil {
 		http.Error(w, "Project not found", http.StatusNotFound)
 		return
@@ -37,7 +37,7 @@ func (h *Handler) CreateTaskHandler(w http.ResponseWriter, r *http.Request) {
 	isOwner := project.OwnerID == user.ID
 
 	isMember := false
-	member, err := h.projectMemberRepo.GetMember(projectID, user.ID)
+	member, err := h.projectMemberService.GetProjectMemberbyID(projectID, user.ID)
 	if err == nil && member != nil {
 		isMember = true
 	}
@@ -63,7 +63,7 @@ func (h *Handler) CreateTaskHandler(w http.ResponseWriter, r *http.Request) {
 	// enforce assignee belongs to project
 	if newTask.AssigneeID != nil {
 		if *newTask.AssigneeID != user.ID {
-			_, err := h.projectMemberRepo.GetMember(projectID, *newTask.AssigneeID)
+			_, err := h.projectMemberService.GetProjectMemberbyID(projectID, *newTask.AssigneeID)
 			if err != nil {
 				http.Error(w, "Assignee is not part of this project", http.StatusBadRequest)
 				return

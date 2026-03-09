@@ -14,8 +14,6 @@ type UserRepo interface {
 	GetUserByID(id int) (*model.User, error)
 	GetUserByEmail(email string) (*model.User, error)
 	UpdateUser(user *model.User) error
-	DeleteUser(id int) error
-	ListUsers() ([]model.User, error)
 	Find(email string) (*model.User, error)
 }
 
@@ -119,34 +117,34 @@ func (u *userRepo) UpdateUser(user *model.User) error {
 	return nil
 }
 
-func (u *userRepo) DeleteUser(id int) error {
-	query := `DELETE FROM users WHERE id=$1`
+// func (u *userRepo) DeleteUser(id int) error {
+// 	query := `DELETE FROM users WHERE id=$1`
 
-	result, err := u.dbCon.Exec(query, id)
-	if err != nil {
-		return err
-	}
+// 	result, err := u.dbCon.Exec(query, id)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	rows, _ := result.RowsAffected()
-	if rows == 0 {
-		return errors.New("user not found")
-	}
+// 	rows, _ := result.RowsAffected()
+// 	if rows == 0 {
+// 		return errors.New("user not found")
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
-func (u *userRepo) ListUsers() ([]model.User, error) {
-	var users []model.User
+// func (u *userRepo) ListUsers() ([]model.User, error) {
+// 	var users []model.User
 
-	query := `SELECT * FROM users ORDER BY id`
+// 	query := `SELECT * FROM users ORDER BY id`
 
-	err := u.dbCon.Select(&users, query)
-	if err != nil {
-		return nil, err
-	}
+// 	err := u.dbCon.Select(&users, query)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	return users, nil
-}
+// 	return users, nil
+// }
 
 func (u *userRepo) Find(email string) (*model.User, error) {
 	var user model.User

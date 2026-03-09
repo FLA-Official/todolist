@@ -21,7 +21,7 @@ func (h *Handler) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Please provide valid json", http.StatusBadRequest)
 		return
 	}
-	err = h.userrepo.CreateUser(&newUser)
+	err = h.userService.Register(&newUser) // create user
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
