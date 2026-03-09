@@ -21,10 +21,9 @@ func (h *Handler) CreateProjectHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Please provide valid json", http.StatusBadRequest)
 		return
 	}
-	user := r.Context().Value("user").(utils.Payload) // JWT payload
-	newProject.OwnerID = user.ID                      // automatically assign owner
+	user := r.Context().Value("user").(utils.Payload) // JWT payload, getting user info
 
-	err = h.projectService.CreateProject(&newProject)
+	err = h.projectService.CreateProject(&newProject, user.ID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

@@ -72,7 +72,7 @@ func (h *Handler) CreateTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create task
-	createdTask, err := h.taskrepo.CreateTask(&newTask)
+	createdTask, err := h.taskService.CreateTask(&newTask, user.ID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

@@ -16,7 +16,7 @@ func (h *Handler) RemoveMember(w http.ResponseWriter, r *http.Request) {
 	projectID, _ := strconv.Atoi(r.PathValue("projectId"))
 	targetUserID, _ := strconv.Atoi(r.PathValue("userId"))
 
-	if err := h.projectMemberService.RemoveMember(projectID, targetUserID); err != nil {
+	if err := h.projectMemberService.RemoveMember(projectID, targetUserID, user.ID); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
