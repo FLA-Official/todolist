@@ -37,7 +37,7 @@ func (s *ProjectMemberService) AddMember(member *model.ProjectMember, userID int
 }
 
 func (s *ProjectMemberService) RemoveMember(projectID, targetUserID, userID int) error {
-
+	//Authentication of user
 	role, err := s.memberRepo.GetUserRole(projectID, userID)
 	if err != nil {
 		return err
@@ -45,6 +45,18 @@ func (s *ProjectMemberService) RemoveMember(projectID, targetUserID, userID int)
 
 	if role != model.RoleOwner && role != model.RoleAdmin {
 		return errors.New("no permission to remove member")
+	}
+
+	targetMemberRole, err := s.memberRepo.GetUserRole(projectID, targetUserID)
+
+	//Authorization of who can remove who
+
+	if targetMemberRole == model.RoleOwner {
+		return errors.New("cannot remove project owner")
+	}
+
+	if targetMemberRole == model.RoleAdmin && role == model.RoleAdmin {
+		return errors.New("Only Owner can remove an admin")
 	}
 
 	return s.memberRepo.RemoveMember(projectID, targetUserID)

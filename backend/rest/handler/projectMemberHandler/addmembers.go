@@ -21,7 +21,7 @@ func (h *Handler) AddMemberHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	projectIDStr := r.PathValue("projectID")
+	projectIDStr := r.PathValue("projectId")
 	projectID, err := strconv.Atoi(projectIDStr)
 	if err != nil {
 		http.Error(w, "invalid projectId", http.StatusBadRequest)

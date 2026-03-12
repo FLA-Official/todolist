@@ -8,6 +8,7 @@ import (
 	"todolist/repo"
 	"todolist/rest"
 	"todolist/rest/handler/projectHandler"
+	"todolist/rest/handler/projectMemberHandler"
 	"todolist/rest/handler/taskHandler"
 	"todolist/rest/handler/userHandler"
 	"todolist/rest/middlewares"
@@ -40,8 +41,9 @@ func Serve() {
 	taskhandler := taskHandler.NewHandler(m, *taskService, *projectService, *projectMemberService)
 	userhandler := userHandler.NewHandler(m, *userService)
 	projectHandler := projectHandler.NewHandler(m, *projectService)
+	projectMemberHandler := projectMemberHandler.NewHandler(m, *projectMemberService)
 
-	server := rest.NewServer(cnf, taskhandler, userhandler, projectHandler)
+	server := rest.NewServer(cnf, taskhandler, userhandler, projectHandler, projectMemberHandler)
 
 	server.Start()
 }

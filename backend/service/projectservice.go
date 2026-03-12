@@ -23,10 +23,21 @@ func NewProjectService(
 }
 
 func (s *ProjectService) CreateProject(project *model.Project, userID int) error {
+	project.OwnerID = userID
 
-	project.OwnerID = userID // automatically assign owner
+	err := s.projectRepo.CreateProject(project)
+	if err != nil {
+		return err
+	}
 
-	return s.projectRepo.CreateProject(project)
+	// add owner to project_members
+	member := &model.ProjectMember{
+		ProjectID: project.ID,
+		UserID:    userID,
+		Role:      model.RoleOwner,
+	}
+
+	return s.memberRepo.AddMember(member)
 }
 
 func (s *ProjectService) GetProject(projectID, userID int) (*model.Project, error) {
@@ -73,22 +84,15 @@ func (s *ProjectService) DeleteProject(projectID, userID int) error {
 
 func (s *ProjectService) ListUserProjects(userID int) ([]model.Project, error) {
 
-	members, err := s.memberRepo.GetMembersByProject(userID)
-	if err != nil {
-		return nil, err
-	}
+	return s.projectRepo.ListProjectsByOwner(userID)
+}
 
-	var projects []model.Project
+func (s *ProjectService) ListUserProjectsAsAdmin(userID int) ([]model.Project, error) {
+	return s.projectRepo.ListProjectsWhereUserIsAdmin(userID)
+}
 
-	for _, m := range members {
-
-		p, err := s.projectRepo.GetProjectByID(m.ProjectID)
-		if err == nil {
-			projects = append(projects, *p)
-		}
-	}
-
-	return projects, nil
+func (s *ProjectService) ListUserProjectAsMember(userID int) ([]model.Project, error) {
+	return s.projectRepo.ListProjectsWhereUserIsMember(userID)
 }
 
 func (s *ProjectService) IsOwner(projectID, userID int) (bool, error) {

@@ -15,6 +15,8 @@ type ProjectRepo interface {
 	DeleteProject(projectID int) error
 	ListProjects() ([]model.Project, error)
 	ListProjectsByOwner(ownerID int) ([]model.Project, error)
+	ListProjectsWhereUserIsAdmin(userID int) ([]model.Project, error)
+	ListProjectsWhereUserIsMember(userID int) ([]model.Project, error)
 }
 
 type projectRepo struct {
@@ -60,8 +62,8 @@ func (p *projectRepo) CreateProject(project *model.Project) error {
 	// ADD OWNER TO MEMBERS TABLE
 	_, err = tx.Exec(`
 	INSERT INTO project_members (project_id, user_id, role)
-	VALUES ($1, $2, 'owner')
-	`, project.ID, project.OwnerID)
+	VALUES ($1, $2, $3)
+	`, project.ID, project.OwnerID, model.RoleOwner)
 
 	if err != nil {
 		tx.Rollback()
@@ -163,4 +165,34 @@ func (p *projectRepo) IsOwner(projectID, userID int) (bool, error) {
 
 	err := p.dbCon.Get(&exists, query, projectID, userID)
 	return exists, err
+}
+
+func (p *projectRepo) ListProjectsWhereUserIsAdmin(userID int) ([]model.Project, error) {
+
+	var projects []model.Project
+
+	query := `
+	SELECT p.*
+	FROM projects p
+	JOIN project_members pm ON pm.project_id = p.id
+	WHERE pm.user_id = $1 AND pm.role = 'admin'
+	`
+
+	err := p.dbCon.Select(&projects, query, userID)
+	return projects, err
+}
+
+func (p *projectRepo) ListProjectsWhereUserIsMember(userID int) ([]model.Project, error) {
+
+	var projects []model.Project
+
+	query := `
+	SELECT p.*
+	FROM projects p
+	JOIN project_members pm ON pm.project_id = p.id
+	WHERE pm.user_id = $1 AND pm.role = 'member'
+	`
+
+	err := p.dbCon.Select(&projects, query, userID)
+	return projects, err
 }

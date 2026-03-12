@@ -8,7 +8,7 @@ import (
 
 func (h *Handler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 
-	taskID := r.PathValue("id")
+	taskID := r.PathValue("taskid")
 
 	id, err := strconv.Atoi(taskID)
 	if err != nil {

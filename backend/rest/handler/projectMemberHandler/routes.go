@@ -25,7 +25,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux, manager *middlewares.Manage
 	)
 
 	// Update role of a member
-	mux.Handle("PUT /projects/{projectId}/members/{userId}",
+	mux.Handle("PUT /projects/{projectId}/members/{userid}",
 		manager.With(
 			http.HandlerFunc(h.UpdateMemberRole),
 			h.middlewares.AuthenticateJWT,
@@ -33,7 +33,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux, manager *middlewares.Manage
 	)
 
 	// Remove a member
-	mux.Handle("DELETE /projects/{projectId}/members/{userId}",
+	mux.Handle("DELETE /projects/{projectId}/members/{userid}",
 		manager.With(
 			http.HandlerFunc(h.RemoveMember),
 			h.middlewares.AuthenticateJWT,

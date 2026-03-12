@@ -14,6 +14,7 @@ type ProjectMemberRepo interface {
 	RemoveMember(projectID, userID int) error
 	GetMembersByProject(projectID int) ([]model.ProjectMember, error)
 	GetUserRole(projectID, userID int) (string, error)
+	GetProjectsByUser(userID int) ([]model.ProjectMember, error)
 }
 
 type projectMemberRepo struct {
@@ -130,16 +131,37 @@ func (r *projectMemberRepo) GetUserRole(projectID, userID int) (string, error) {
 
 	var role string
 
-	query := `
-	SELECT role
-	FROM project_members
-	WHERE project_id=$1 AND user_id=$2
-	`
+	err := r.dbCon.Get(&role,
+		`SELECT role
+		 FROM project_members
+		 WHERE project_id=$1 AND user_id=$2`,
+		projectID, userID,
+	)
 
-	err := r.dbCon.Get(&role, query, projectID, userID)
 	if err != nil {
 		return "", errors.New("user is not a member of this project")
 	}
 
 	return role, nil
+}
+
+func (r *projectMemberRepo) GetProjectsByUser(userID int) ([]model.ProjectMember, error) {
+
+	var members []model.ProjectMember
+
+	query := `
+	SELECT * FROM project_members
+	WHERE user_id=$1
+	`
+
+	err := r.dbCon.Select(&members, query, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(members) == 0 {
+		return nil, errors.New("user is not part of any project")
+	}
+
+	return members, nil
 }
