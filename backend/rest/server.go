@@ -11,6 +11,7 @@ import (
 	"todolist/rest/handler/taskHandler"
 	"todolist/rest/handler/userHandler"
 	"todolist/rest/middlewares"
+	"todolist/utils"
 )
 
 type Server struct {
@@ -26,24 +27,27 @@ func NewServer(
 	taskHandler *taskHandler.Handler,
 	userHandler *userHandler.Handler,
 	projectHandler *projectHandler.Handler,
-	projecntMemberHandler *projectMemberHandler.Handler,
+	projectMemberHandler *projectMemberHandler.Handler,
 ) *Server {
 	return &Server{
 		config:               config,
 		taskHandler:          taskHandler,
 		userHandler:          userHandler,
 		projectHandler:       projectHandler,
-		projectMemberHandler: projecntMemberHandler,
+		projectMemberHandler: projectMemberHandler,
 	}
 }
 
 func (server *Server) Start() {
 	manager := middlewares.NewManager()
+	logger := utils.NewLogger()
 
 	manager.Use(
 		middlewares.Preflight,
 		middlewares.Cors,
-		middlewares.Logger,
+		middlewares.Recovery(logger),
+		middlewares.Logger(logger),
+		middlewares.RequestID,
 	)
 
 	mux := http.NewServeMux()
