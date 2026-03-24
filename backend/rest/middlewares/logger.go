@@ -22,22 +22,46 @@ func Logger(logger *slog.Logger) func(http.Handler) http.Handler {
 
 			next.ServeHTTP(rw, r)
 
-			duration := time.Since(start)
-
+			// Get Request ID
 			reqID, _ := r.Context().Value(RequestIDKey).(string)
 
-			payload, ok := r.Context().Value("user").(utils.Payload)
-			if ok {
-				logger.Info("request",
-					"request_id", reqID,
-					"user_id", payload.ID,
-					"method", r.Method,
-					"path", r.URL.Path,
-					"status", rw.StatusCode,
-					"duration", duration.String(),
-					"ip", r.RemoteAddr,
-				)
+			reqLogger := logger.With(
+				"request_id", reqID,
+				"method", r.Method,
+				"path", r.URL.Path,
+			)
+
+			//Attach user_id if available
+			if payload, ok := r.Context().Value("user").(utils.Payload); ok {
+				reqLogger = reqLogger.With("user_id", payload.ID)
 			}
+
+			//Panic Recovery
+			defer func() {
+				if err := recover(); err != nil {
+					reqLogger.Error("panic recovered",
+						"error", err,
+						"path", r.URL.Path,
+					)
+
+					http.Error(rw, "Internal Server Error", http.StatusInternalServerError)
+				}
+			}()
+
+			//Inject Logger into context
+			ctx := utils.WithLogger(r.Context(), reqLogger)
+			//Continue Request with new Context
+			next.ServeHTTP(rw, r.WithContext(ctx))
+
+			duration := time.Since(start)
+
+			//Final log (request summary)
+			reqLogger.Info(
+				"requested completed",
+				"status", rw.StatusCode,
+				"duration", duration.String(),
+				"ip", r.RemoteAddr,
+			)
 
 		})
 	}
