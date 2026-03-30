@@ -29,6 +29,10 @@ func NewTaskRepo(dbCon *sqlx.DB) TaskRepo {
 
 func (r *taskRepo) CreateTask(task *model.Task) (*model.Task, error) {
 
+	if err := task.Validate(); err != nil {
+		return nil, err
+	}
+
 	query := `
 	INSERT INTO tasks (project_id, title, description, status, priority, assignee_id)
 	VALUES ($1,$2,$3,$4,$5,$6)

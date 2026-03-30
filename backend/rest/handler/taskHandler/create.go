@@ -10,10 +10,12 @@ import (
 
 // CreateTask handles POST /tasks and adds a new task to the database.
 func (h *Handler) CreateTaskHandler(w http.ResponseWriter, r *http.Request) {
+	logger := utils.LoggerFromContext(r.Context())
 
 	// Get logged-in user
 	user, ok := r.Context().Value("user").(utils.Payload)
 	if !ok {
+		logger.Error("Wrong or corrupted JWT Token")
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
@@ -22,13 +24,15 @@ func (h *Handler) CreateTaskHandler(w http.ResponseWriter, r *http.Request) {
 	projectIDStr := r.PathValue("projectid")
 	projectID, err := strconv.Atoi(projectIDStr)
 	if err != nil {
+		logger.Error("Failed datatype convertion, or invalid ID ")
 		http.Error(w, "Invalid project id", http.StatusBadRequest)
 		return
 	}
 
 	// Check project exists
-	project, err := h.projectService.GetProject(projectID, user.ID)
+	project, err := h.projectService.GetProject(r.Context(), projectID, user.ID)
 	if err != nil {
+		logger.Error("Project not found for this user", "user_ID", user.ID)
 		http.Error(w, "Project not found", http.StatusNotFound)
 		return
 	}
@@ -43,6 +47,7 @@ func (h *Handler) CreateTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !isOwner && !isMember {
+		logger.Error("This user is not part of the project", "user_ID", user.ID)
 		http.Error(w, "Forbidden: Not part of this project", http.StatusForbidden)
 		return
 	}
@@ -53,6 +58,7 @@ func (h *Handler) CreateTaskHandler(w http.ResponseWriter, r *http.Request) {
 	decoder.DisallowUnknownFields()
 
 	if err := decoder.Decode(&newTask); err != nil {
+		logger.Error("Invalid Request Body")
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
@@ -65,6 +71,11 @@ func (h *Handler) CreateTaskHandler(w http.ResponseWriter, r *http.Request) {
 		if *newTask.AssigneeID != user.ID {
 			_, err := h.projectMemberService.GetProjectMemberbyID(projectID, *newTask.AssigneeID)
 			if err != nil {
+				logger.Error(
+					"Assignee is not part of the project",
+					"assignee_id", newTask.AssigneeID,
+					"user_id", user.ID,
+				)
 				http.Error(w, "Assignee is not part of this project", http.StatusBadRequest)
 				return
 			}
@@ -72,7 +83,7 @@ func (h *Handler) CreateTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create task
-	createdTask, err := h.taskService.CreateTask(&newTask, user.ID)
+	createdTask, err := h.taskService.CreateTask(r.Context(), &newTask, user.ID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

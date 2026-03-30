@@ -24,7 +24,7 @@ func (h *Handler) GetProjectByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	project, err := h.projectService.GetProject(id, user.ID)
+	project, err := h.projectService.GetProject(r.Context(), id, user.ID)
 	if err != nil {
 		http.Error(w, "Error retrieving project", http.StatusInternalServerError)
 		return

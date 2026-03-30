@@ -1,9 +1,11 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"todolist/model"
 	"todolist/repo"
+	"todolist/utils"
 )
 
 type TaskService struct {
@@ -25,16 +27,22 @@ func NewTaskService(
 	}
 }
 
-func (s *TaskService) CreateTask(task *model.Task, userID int) (*model.Task, error) {
+func (s *TaskService) CreateTask(ctx context.Context, task *model.Task, userID int) (*model.Task, error) {
+
+	logger := utils.LoggerFromContext(ctx)
 
 	role, err := s.memberRepo.GetUserRole(task.ProjectID, userID)
 	if err != nil {
+		logger.Error("role fetch failed", "project_id", task.ProjectID, "user_id", userID)
 		return nil, err
 	}
 
 	if role == "" {
+		logger.Error("not a project member", "project_id", task.ProjectID, "user_id", userID)
 		return nil, errors.New("not a project member")
 	}
+
+	logger.Info("task created", "project_id", task.ProjectID, "user_id", userID)
 
 	return s.taskRepo.CreateTask(task)
 }

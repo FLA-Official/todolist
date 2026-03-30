@@ -1,9 +1,11 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"todolist/model"
 	"todolist/repo"
+	"todolist/utils"
 )
 
 type ProjectMemberService struct {
@@ -36,28 +38,46 @@ func (s *ProjectMemberService) AddMember(member *model.ProjectMember, userID int
 	return s.memberRepo.AddMember(member)
 }
 
-func (s *ProjectMemberService) RemoveMember(projectID, targetUserID, userID int) error {
-	//Authentication of user
+func (s *ProjectMemberService) RemoveMember(ctx context.Context, projectID, targetUserID, userID int) error {
+
+	logger := utils.LoggerFromContext(ctx)
+
 	role, err := s.memberRepo.GetUserRole(projectID, userID)
 	if err != nil {
+		logger.Error("failed to get role", "project_id", projectID, "user_id", userID)
 		return err
 	}
 
 	if role != model.RoleOwner && role != model.RoleAdmin {
+		logger.Error("unauthorized remove attempt",
+			"project_id", projectID,
+			"user_id", userID,
+			"target_user_id", targetUserID,
+		)
 		return errors.New("no permission to remove member")
 	}
 
 	targetMemberRole, err := s.memberRepo.GetUserRole(projectID, targetUserID)
-
-	//Authorization of who can remove who
+	if err != nil {
+		logger.Error("failed to get target role", "target_user_id", targetUserID)
+		return err
+	}
 
 	if targetMemberRole == model.RoleOwner {
+		logger.Error("attempt to remove owner", "target_user_id", targetUserID)
 		return errors.New("cannot remove project owner")
 	}
 
 	if targetMemberRole == model.RoleAdmin && role == model.RoleAdmin {
+		logger.Error("admin tried removing admin", "user_id", userID)
 		return errors.New("Only Owner can remove an admin")
 	}
+
+	logger.Info("member removed",
+		"project_id", projectID,
+		"removed_user", targetUserID,
+		"removed_by", userID,
+	)
 
 	return s.memberRepo.RemoveMember(projectID, targetUserID)
 }

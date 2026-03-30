@@ -23,7 +23,7 @@ func (h *Handler) CreateProjectHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	user := r.Context().Value("user").(utils.Payload) // JWT payload, getting user info
 
-	err = h.projectService.CreateProject(&newProject, user.ID)
+	err = h.projectService.CreateProject(r.Context(), &newProject, user.ID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

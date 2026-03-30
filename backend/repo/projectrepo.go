@@ -39,6 +39,10 @@ func (p *projectRepo) CreateProject(project *model.Project) error {
 	if err != nil {
 		return err
 	}
+	err = project.Validate()
+	if err != nil {
+		return err
+	}
 
 	query := `
 	INSERT INTO projects (name, key, description, owner_id)

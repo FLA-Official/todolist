@@ -28,7 +28,7 @@ func (h *Handler) UpdateProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch existing project
-	existingProject, err := h.projectService.GetProject(id, user.ID)
+	existingProject, err := h.projectService.GetProject(r.Context(), id, user.ID)
 	if err != nil {
 		http.Error(w, "Project not found", http.StatusNotFound)
 		return

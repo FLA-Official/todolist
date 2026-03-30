@@ -2,7 +2,6 @@ package userHandler
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"todolist/config"
 	"todolist/utils"
@@ -17,30 +16,29 @@ type ReqLogin struct {
 // Login authenticates a user and returns a JWT access token on success.
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	var reqlogin ReqLogin
-	// creating decoder object
+
+	ctx := r.Context()
+	logger := utils.LoggerFromContext(ctx)
+
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
+
 	err := decoder.Decode(&reqlogin)
 	if err != nil {
-		fmt.Println(err)
-		// http.Error(w, "Please provide valid json", 400)
+		logger.Error("invalid request body")
 		http.Error(w, "Invalid Request", http.StatusBadRequest)
 		return
 	}
-	usr, err := h.userService.Login(reqlogin.Email, reqlogin.Password)
 
+	usr, err := h.userService.Login(ctx, reqlogin.Email, reqlogin.Password)
 	if err != nil {
+		logger.Error("login failed", "email", reqlogin.Email)
 		http.Error(w, "Invalid Credentials", http.StatusBadRequest)
 		return
 	}
 
-	if err := utils.CheckPassword(usr.Password, reqlogin.Password); err != nil {
-		http.Error(w, "Invalid Credentials", http.StatusUnauthorized)
-		return
-	}
-
 	cnf := config.GetConfig()
-	// JWT secret key is alternatively called access token
+
 	accessToken, err := utils.CreateJWT(cnf.JWTSecretKey, utils.Payload{
 		ID:       usr.ID,
 		Username: usr.Username,
@@ -48,9 +46,12 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		Email:    usr.Email,
 	})
 	if err != nil {
+		logger.Error("failed to create jwt", "user_id", usr.ID)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
 	}
 
-	// creating encoder object
+	logger.Info("user login success", "user_id", usr.ID)
+
 	utils.SendData(w, accessToken, http.StatusCreated)
 }

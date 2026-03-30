@@ -1,9 +1,11 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"todolist/model"
 	"todolist/repo"
+	"todolist/utils"
 )
 
 type ProjectService struct {
@@ -22,15 +24,20 @@ func NewProjectService(
 	}
 }
 
-func (s *ProjectService) CreateProject(project *model.Project, userID int) error {
+func (s *ProjectService) CreateProject(ctx context.Context, project *model.Project, userID int) error {
+
+	logger := utils.LoggerFromContext(ctx)
+
 	project.OwnerID = userID
 
 	err := s.projectRepo.CreateProject(project)
 	if err != nil {
+		logger.Error("failed to create project", "user_id", userID)
 		return err
 	}
 
-	// add owner to project_members
+	logger.Info("project created", "project_id", project.ID, "user_id", userID)
+
 	member := &model.ProjectMember{
 		ProjectID: project.ID,
 		UserID:    userID,
@@ -39,15 +46,18 @@ func (s *ProjectService) CreateProject(project *model.Project, userID int) error
 
 	return s.memberRepo.AddMember(member)
 }
+func (s *ProjectService) GetProject(ctx context.Context, projectID, userID int) (*model.Project, error) {
 
-func (s *ProjectService) GetProject(projectID, userID int) (*model.Project, error) {
+	logger := utils.LoggerFromContext(ctx)
 
 	role, err := s.memberRepo.GetUserRole(projectID, userID)
 	if err != nil {
+		logger.Error("access denied", "project_id", projectID, "user_id", userID)
 		return nil, errors.New("no access to this project")
 	}
 
 	if role == "" {
+		logger.Error("not a member", "project_id", projectID, "user_id", userID)
 		return nil, errors.New("not a member")
 	}
 
