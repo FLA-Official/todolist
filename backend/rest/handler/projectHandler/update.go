@@ -3,13 +3,12 @@ package projectHandler
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"todolist/model"
 	"todolist/utils"
 )
 
-// UpdateProject handles PUT /projects/{id} and updates an existing project.
+// UpdateProject handles PUT /projects/{key} and updates an existing project.
 func (h *Handler) UpdateProject(w http.ResponseWriter, r *http.Request) {
 
 	// Get logged-in user from context
@@ -19,16 +18,15 @@ func (h *Handler) UpdateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get project ID
-	projectID := r.PathValue("id")
-	id, err := strconv.Atoi(projectID)
-	if err != nil {
-		http.Error(w, "Invalid project id", http.StatusBadRequest)
+	// Get project key from path
+	projectKey := r.PathValue("key")
+	if projectKey == "" {
+		http.Error(w, "Invalid project key", http.StatusBadRequest)
 		return
 	}
 
 	// Fetch existing project
-	existingProject, err := h.projectService.GetProject(r.Context(), id, user.ID)
+	existingProject, err := h.projectService.GetProjectByKey(r.Context(), projectKey, user.ID)
 	if err != nil {
 		http.Error(w, "Project not found", http.StatusNotFound)
 		return
@@ -51,12 +49,10 @@ func (h *Handler) UpdateProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Preserve immutable fields
-	newProject.ID = id
+	newProject.ID = existingProject.ID
+	newProject.Key = existingProject.Key             // preserve key
 	newProject.OwnerID = existingProject.OwnerID     // prevent owner change
 	newProject.CreatedAt = existingProject.CreatedAt // preserve original time
-
-	// (optional but recommended)
-	// prevent user from manually setting past created_at or owner_id
 
 	// Update
 	err = h.projectService.UpdateProject(&newProject, user.ID)

@@ -33,15 +33,21 @@ func (r *taskRepo) CreateTask(task *model.Task) (*model.Task, error) {
 		return nil, err
 	}
 
+	var projectID int
+	err := r.dbCon.Get(&projectID, `SELECT id FROM projects WHERE key = $1`, task.ProjectKey)
+	if err != nil {
+		return nil, err
+	}
+
 	query := `
 	INSERT INTO tasks (project_id, title, description, status, priority, assignee_id)
 	VALUES ($1,$2,$3,$4,$5,$6)
 	RETURNING id, created_at
 	`
 
-	err := r.dbCon.QueryRow(
+	err = r.dbCon.QueryRow(
 		query,
-		task.ProjectID,
+		projectID,
 		task.Title,
 		task.Description,
 		task.Status,
@@ -60,7 +66,12 @@ func (r *taskRepo) GetTaskByID(taskID int) (*model.Task, error) {
 
 	var task model.Task
 
-	query := `SELECT * FROM tasks WHERE id = $1`
+	query := `
+	SELECT t.*, p.key AS project_key
+	FROM tasks t
+	JOIN projects p ON p.id = t.project_id
+	WHERE t.id = $1
+	`
 
 	err := r.dbCon.Get(&task, query, taskID)
 	if err != nil {
@@ -140,10 +151,11 @@ func (r *taskRepo) ListTasksByProject(projectID int) ([]model.Task, error) {
 	var tasks []model.Task
 
 	query := `
-	SELECT *
-	FROM tasks
-	WHERE project_id = $1
-	ORDER BY created_at DESC
+	SELECT t.*, p.key AS project_key
+	FROM tasks t
+	JOIN projects p ON p.id = t.project_id
+	WHERE t.project_id = $1
+	ORDER BY t.created_at DESC
 	`
 
 	err := r.dbCon.Select(&tasks, query, projectID)

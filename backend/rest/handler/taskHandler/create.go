@@ -3,7 +3,6 @@ package taskHandler
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 	"todolist/model"
 	"todolist/utils"
 )
@@ -20,17 +19,16 @@ func (h *Handler) CreateTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get project ID from URL
-	projectIDStr := r.PathValue("projectid")
-	projectID, err := strconv.Atoi(projectIDStr)
-	if err != nil {
-		logger.Error("Failed datatype convertion, or invalid ID ")
-		http.Error(w, "Invalid project id", http.StatusBadRequest)
+	// Get project key from URL
+	projectKey := r.PathValue("projectkey")
+	if projectKey == "" {
+		logger.Error("Invalid project key")
+		http.Error(w, "Invalid project key", http.StatusBadRequest)
 		return
 	}
 
-	// Check project exists
-	project, err := h.projectService.GetProject(r.Context(), projectID, user.ID)
+	// Check project exists and user has access
+	project, err := h.projectService.GetProjectByKey(r.Context(), projectKey, user.ID)
 	if err != nil {
 		logger.Error("Project not found for this user", "user_ID", user.ID)
 		http.Error(w, "Project not found", http.StatusNotFound)
@@ -41,7 +39,7 @@ func (h *Handler) CreateTaskHandler(w http.ResponseWriter, r *http.Request) {
 	isOwner := project.OwnerID == user.ID
 
 	isMember := false
-	member, err := h.projectMemberService.GetProjectMemberbyID(projectID, user.ID)
+	member, err := h.projectMemberService.GetProjectMemberbyID(project.ID, user.ID)
 	if err == nil && member != nil {
 		isMember = true
 	}
@@ -64,12 +62,12 @@ func (h *Handler) CreateTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Enforce project from URL (NOT from body)
-	newTask.ProjectID = projectID
+	newTask.ProjectKey = project.Key
 
 	// enforce assignee belongs to project
 	if newTask.AssigneeID != nil {
 		if *newTask.AssigneeID != user.ID {
-			_, err := h.projectMemberService.GetProjectMemberbyID(projectID, *newTask.AssigneeID)
+			_, err := h.projectMemberService.GetProjectMemberbyID(project.ID, *newTask.AssigneeID)
 			if err != nil {
 				logger.Error(
 					"Assignee is not part of the project",

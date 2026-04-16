@@ -41,7 +41,7 @@ func Serve() {
 	taskhandler := taskHandler.NewHandler(m, *taskService, *projectService, *projectMemberService)
 	userhandler := userHandler.NewHandler(m, *userService)
 	projectHandler := projectHandler.NewHandler(m, *projectService)
-	projectMemberHandler := projectMemberHandler.NewHandler(m, *projectMemberService)
+	projectMemberHandler := projectMemberHandler.NewHandler(m, *projectService, *projectMemberService)
 
 	server := rest.NewServer(cnf, taskhandler, userhandler, projectHandler, projectMemberHandler)
 

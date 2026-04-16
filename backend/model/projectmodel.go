@@ -15,6 +15,8 @@ type Project struct {
 	Partner     *int       `db:"partner" json:"partner,omitempty"`
 	CreatedAt   time.Time  `db:"created_at" json:"created_at"`
 	EndAt       *time.Time `db:"end_at" json:"end_at,omitempty"`
+	Prefix      *string    `db:"prefix" `
+	Sequence    *int       `db:"sequence" `
 }
 
 func (p *Project) Validate() error {
@@ -26,7 +28,7 @@ func (p *Project) Validate() error {
 		return errors.New("project key is required")
 	}
 
-	// Key format (like Jira: uppercase short code)
+	// Key format
 	if len(p.Key) < 2 || len(p.Key) > 10 {
 		return errors.New("project key must be 2-10 characters")
 	}

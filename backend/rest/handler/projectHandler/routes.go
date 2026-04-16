@@ -22,21 +22,21 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux, manager *middlewares.Manage
 		),
 	) // declaring Route
 
-	mux.Handle("GET /projects/{id}",
+	mux.Handle("GET /projects/{key}",
 		manager.With(
-			http.HandlerFunc(h.GetProjectByID),
+			http.HandlerFunc(h.GetProjectByKey),
 			h.middlewares.AuthenticateJWT,
 		),
 	) // declaring Route
 
-	mux.Handle("PUT /projects/{id}",
+	mux.Handle("PUT /projects/{key}",
 		manager.With(
 			http.HandlerFunc(h.UpdateProject),
 			h.middlewares.AuthenticateJWT,
 		),
 	) // declaring Route
 
-	mux.Handle("DELETE /projects/{id}",
+	mux.Handle("DELETE /projects/{key}",
 		manager.With(
 			http.HandlerFunc(h.DeleteProject),
 			h.middlewares.AuthenticateJWT,

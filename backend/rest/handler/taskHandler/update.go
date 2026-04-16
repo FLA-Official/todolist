@@ -20,11 +20,19 @@ func (h *Handler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	projectID := r.PathValue("projectid")
+	projectKey := r.PathValue("projectkey")
+	if projectKey == "" {
+		http.Error(w, "Invalid project key", http.StatusBadRequest)
+		return
+	}
 
-	projectid, err := strconv.Atoi(projectID)
+	payload := r.Context().Value("user").(utils.Payload)
+	userID := payload.ID
+
+	// Get project by key to verify access and get ID
+	project, err := h.projectService.GetProjectByKey(r.Context(), projectKey, userID)
 	if err != nil {
-		http.Error(w, "Please give me a valid project id", http.StatusBadRequest)
+		http.Error(w, "Project not found or access denied", http.StatusNotFound)
 		return
 	}
 
@@ -38,14 +46,11 @@ func (h *Handler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	payload := r.Context().Value("user").(utils.Payload)
-	userID := payload.ID
-
 	fmt.Println("Logged user ID:", userID)
-	fmt.Println("Project ID:", projectid)
+	fmt.Println("Project Key:", projectKey)
 
 	newTask.ID = taskid
-	newTask.ProjectID = projectid
+	newTask.ProjectKey = project.Key
 
 	err = h.taskService.UpdateTask(&newTask, userID)
 	if err != nil {

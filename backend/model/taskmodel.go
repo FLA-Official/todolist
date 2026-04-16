@@ -16,7 +16,8 @@ const (
 
 type Task struct {
 	ID          int        `db:"id" json:"id"`
-	ProjectID   int        `db:"project_id" json:"project_id"`
+	ProjectID   int        `db:"project_id" json:"-"`
+	ProjectKey  string     `db:"project_key" json:"project_key"`
 	Title       string     `db:"title" json:"title"`
 	Description *string    `db:"description" json:"description,omitempty"`
 	Status      string     `db:"status" json:"status"`

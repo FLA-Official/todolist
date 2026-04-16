@@ -13,10 +13,23 @@ func (h *Handler) RemoveMember(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	projectID, _ := strconv.Atoi(r.PathValue("projectId"))
+
+	projectKey := r.PathValue("projectkey")
+	if projectKey == "" {
+		http.Error(w, "Invalid project key", http.StatusBadRequest)
+		return
+	}
+
+	// Verify project access by key
+	_, err := h.projectService.GetProjectByKey(r.Context(), projectKey, user.ID)
+	if err != nil {
+		http.Error(w, "Project not found or access denied", http.StatusNotFound)
+		return
+	}
+
 	targetMemberID, _ := strconv.Atoi(r.PathValue("userid"))
 
-	if err := h.projectMemberService.RemoveMember(r.Context(), projectID, targetMemberID, user.ID); err != nil {
+	if err := h.projectMemberService.RemoveMember(r.Context(), projectKey, targetMemberID, user.ID); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}

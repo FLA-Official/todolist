@@ -2,29 +2,27 @@ package projectHandler
 
 import (
 	"net/http"
-	"strconv"
 	"todolist/utils"
 )
 
 func (h *Handler) DeleteProject(w http.ResponseWriter, r *http.Request) {
 
-	// Get logged-in user from context
+	// Get logged-in user
 	user, ok := r.Context().Value("user").(utils.Payload)
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	// Get project ID from URL
-	projectID := r.PathValue("id")
-	id, err := strconv.Atoi(projectID)
-	if err != nil {
-		http.Error(w, "Invalid project id", http.StatusBadRequest)
+	// Get project KEY instead of ID
+	projectKey := r.PathValue("key")
+	if projectKey == "" {
+		http.Error(w, "Invalid project key", http.StatusBadRequest)
 		return
 	}
 
-	// Fetch project from DB
-	project, err := h.projectService.GetProject(r.Context(), id, user.ID)
+	// Get project using KEY + user
+	project, err := h.projectService.GetProjectByKey(r.Context(), projectKey, user.ID)
 	if err != nil {
 		http.Error(w, "Project not found", http.StatusNotFound)
 		return
@@ -36,8 +34,8 @@ func (h *Handler) DeleteProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Delete project
-	err = h.projectService.DeleteProject(id, user.ID)
+	// Delete by key
+	err = h.projectService.DeleteProjectByKey(r.Context(), projectKey, user.ID)
 	if err != nil {
 		http.Error(w, "Error deleting project", http.StatusInternalServerError)
 		return

@@ -16,19 +16,24 @@ func (h *Handler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	projectID := r.PathValue("projectid")
-
-	projectid, err := strconv.Atoi(projectID)
-	if err != nil {
-		http.Error(w, "Please give me a valid task id", http.StatusBadRequest)
+	projectKey := r.PathValue("projectkey")
+	if projectKey == "" {
+		http.Error(w, "Invalid project key", http.StatusBadRequest)
 		return
 	}
 
 	// get logged-in user
 	payload := r.Context().Value("user").(utils.Payload)
 
-	// pass userID to repo
-	err = h.taskService.DeleteTask(id, projectid, payload.ID)
+	// Verify project access by key
+	_, err = h.projectService.GetProjectByKey(r.Context(), projectKey, payload.ID)
+	if err != nil {
+		http.Error(w, "Project not found or access denied", http.StatusNotFound)
+		return
+	}
+
+	// pass project key and user ID to service
+	err = h.taskService.DeleteTask(projectKey, id, payload.ID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusForbidden)
 		return

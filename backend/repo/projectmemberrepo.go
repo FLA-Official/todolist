@@ -13,7 +13,7 @@ type ProjectMemberRepo interface {
 	UpdateMemberRole(projectID, userID int, role string) error
 	RemoveMember(projectID, userID int) error
 	GetMembersByProject(projectID int) ([]model.ProjectMember, error)
-	GetUserRole(projectID, userID int) (string, error)
+	GetUserRole(projectKey string, userID int) (string, error)
 	GetProjectsByUser(userID int) ([]model.ProjectMember, error)
 }
 
@@ -35,15 +35,16 @@ func (r *projectMemberRepo) AddMember(member *model.ProjectMember) error {
 	query := `
 		INSERT INTO project_members (project_id, user_id, role)
 		VALUES ($1, $2, $3)
-		RETURNING id, joined_at
+		ON CONFLICT (project_id, user_id) DO NOTHING
 	`
 
-	return r.dbCon.QueryRow(
+	_, err := r.dbCon.Exec(
 		query,
 		member.ProjectID,
 		member.UserID,
 		member.Role,
-	).Scan(&member.ID, &member.JoinedAt)
+	)
+	return err
 }
 
 func (r *projectMemberRepo) GetMember(projectID, userID int) (*model.ProjectMember, error) {
@@ -127,15 +128,16 @@ func (r *projectMemberRepo) GetMembersByProject(projectID int) ([]model.ProjectM
 	return members, err
 }
 
-func (r *projectMemberRepo) GetUserRole(projectID, userID int) (string, error) {
+func (r *projectMemberRepo) GetUserRole(projectKey string, userID int) (string, error) {
 
 	var role string
 
 	err := r.dbCon.Get(&role,
-		`SELECT role
-		 FROM project_members
-		 WHERE project_id=$1 AND user_id=$2`,
-		projectID, userID,
+		`SELECT pm.role
+		 FROM project_members pm
+		 JOIN projects p ON p.id = pm.project_id
+		 WHERE p.key = $1 AND pm.user_id = $2`,
+		projectKey, userID,
 	)
 
 	if err != nil {

@@ -31,25 +31,25 @@ func (s *TaskService) CreateTask(ctx context.Context, task *model.Task, userID i
 
 	logger := utils.LoggerFromContext(ctx)
 
-	role, err := s.memberRepo.GetUserRole(task.ProjectID, userID)
+	role, err := s.memberRepo.GetUserRole(task.ProjectKey, userID)
 	if err != nil {
-		logger.Error("role fetch failed", "project_id", task.ProjectID, "user_id", userID)
+		logger.Error("role fetch failed", "project_Key", task.ProjectKey, "user_id", userID)
 		return nil, err
 	}
 
 	if role == "" {
-		logger.Error("not a project member", "project_id", task.ProjectID, "user_id", userID)
+		logger.Error("not a project member", "project_Key", task.ProjectKey, "user_id", userID)
 		return nil, errors.New("not a project member")
 	}
 
-	logger.Info("task created", "project_id", task.ProjectID, "user_id", userID)
+	logger.Info("task created", "project_id", task.ProjectKey, "user_id", userID)
 
 	return s.taskRepo.CreateTask(task)
 }
 
 func (s *TaskService) UpdateTask(task *model.Task, userID int) error {
 
-	role, err := s.memberRepo.GetUserRole(task.ProjectID, userID)
+	role, err := s.memberRepo.GetUserRole(task.ProjectKey, userID)
 	if err != nil {
 		return err
 	}
@@ -61,9 +61,9 @@ func (s *TaskService) UpdateTask(task *model.Task, userID int) error {
 	return s.taskRepo.UpdateTask(task)
 }
 
-func (s *TaskService) DeleteTask(taskID, projectID, userID int) error {
+func (s *TaskService) DeleteTask(projectKey string, taskID, userID int) error {
 
-	role, err := s.memberRepo.GetUserRole(projectID, userID)
+	role, err := s.memberRepo.GetUserRole(projectKey, userID)
 	if err != nil {
 		return err
 	}
@@ -77,7 +77,12 @@ func (s *TaskService) DeleteTask(taskID, projectID, userID int) error {
 
 func (s *TaskService) GetProjectTasks(projectID, userID int) ([]model.Task, error) {
 
-	role, err := s.memberRepo.GetUserRole(projectID, userID)
+	project, err := s.projectRepo.GetProjectByID(projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	role, err := s.memberRepo.GetUserRole(project.Key, userID)
 	if err != nil {
 		return nil, err
 	}

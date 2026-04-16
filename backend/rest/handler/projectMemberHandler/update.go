@@ -18,13 +18,20 @@ func (h *Handler) UpdateMemberRole(w http.ResponseWriter, r *http.Request) {
 
 	userID := user.ID
 
-	projectID, err := strconv.Atoi(r.PathValue("projectId"))
-	if err != nil {
-		http.Error(w, "invalid project id", http.StatusBadRequest)
+	projectKey := r.PathValue("projectkey")
+	if projectKey == "" {
+		http.Error(w, "Invalid project key", http.StatusBadRequest)
 		return
 	}
 
-	targetUserID, err := strconv.Atoi(r.PathValue("userId"))
+	// Get project by key to verify access and get ID
+	project, err := h.projectService.GetProjectByKey(r.Context(), projectKey, userID)
+	if err != nil {
+		http.Error(w, "Project not found or access denied", http.StatusNotFound)
+		return
+	}
+
+	targetUserID, err := strconv.Atoi(r.PathValue("userid"))
 	if err != nil {
 		http.Error(w, "invalid user id", http.StatusBadRequest)
 		return
@@ -41,7 +48,7 @@ func (h *Handler) UpdateMemberRole(w http.ResponseWriter, r *http.Request) {
 
 	err = h.projectMemberService.UpdateMemberRole(
 		targetUserID,
-		projectID,
+		project.ID,
 		userID,
 		input.Role,
 	)

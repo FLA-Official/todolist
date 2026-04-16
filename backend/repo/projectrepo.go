@@ -2,21 +2,22 @@ package repo
 
 import (
 	"errors"
-	"fmt"
 	"todolist/model"
 
 	"github.com/jmoiron/sqlx"
 )
 
 type ProjectRepo interface {
-	CreateProject(project *model.Project) error
+	BeginTx() (*sqlx.Tx, error)
+	CreateProjectTx(tx *sqlx.Tx, project *model.Project) error
 	GetProjectByID(id int) (*model.Project, error)
+	GetProjectByKey(key string) (*model.Project, error)
 	UpdateProject(project *model.Project) error
-	DeleteProject(projectID int) error
-	ListProjects() ([]model.Project, error)
+	DeleteProjectByKey(key string) error
 	ListProjectsByOwner(ownerID int) ([]model.Project, error)
 	ListProjectsWhereUserIsAdmin(userID int) ([]model.Project, error)
 	ListProjectsWhereUserIsMember(userID int) ([]model.Project, error)
+	GetNextProjectSequenceTx(tx *sqlx.Tx, prefix string) (int, error)
 }
 
 type projectRepo struct {
@@ -34,12 +35,39 @@ func NewProjectRepo(dbCon *sqlx.DB) ProjectRepo {
 // 	Partner     *int      `json:"partner"`
 // 	CreatedAt   time.Time `json:"created_at"`
 
-func (p *projectRepo) CreateProject(project *model.Project) error {
-	tx, err := p.dbCon.Beginx()
+func (p *projectRepo) GetProjectByKey(key string) (*model.Project, error) {
+
+	var project model.Project
+
+	err := p.dbCon.Get(&project,
+		`SELECT * FROM projects WHERE key=$1`,
+		key,
+	)
+
 	if err != nil {
-		return err
+		return nil, err
 	}
-	err = project.Validate()
+
+	return &project, nil
+}
+
+func (p *projectRepo) GetProjectByID(id int) (*model.Project, error) {
+	var project model.Project
+
+	err := p.dbCon.Get(&project, `SELECT * FROM projects WHERE id=$1`, id)
+	if err != nil {
+		return nil, errors.New("project not found")
+	}
+
+	return &project, nil
+}
+
+func (p *projectRepo) BeginTx() (*sqlx.Tx, error) {
+	return p.dbCon.Beginx()
+}
+
+func (p *projectRepo) CreateProjectTx(tx *sqlx.Tx, project *model.Project) error {
+	err := project.Validate()
 	if err != nil {
 		return err
 	}
@@ -57,35 +85,16 @@ func (p *projectRepo) CreateProject(project *model.Project) error {
 		project.Description,
 		project.OwnerID,
 	).Scan(&project.ID, &project.CreatedAt)
-
 	if err != nil {
-		tx.Rollback()
 		return err
 	}
 
-	// ADD OWNER TO MEMBERS TABLE
 	_, err = tx.Exec(`
 	INSERT INTO project_members (project_id, user_id, role)
 	VALUES ($1, $2, $3)
 	`, project.ID, project.OwnerID, model.RoleOwner)
 
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	return tx.Commit()
-}
-
-func (p *projectRepo) GetProjectByID(id int) (*model.Project, error) {
-	var project model.Project
-
-	err := p.dbCon.Get(&project, `SELECT * FROM projects WHERE id=$1`, id)
-	if err != nil {
-		return nil, errors.New("project not found")
-	}
-
-	return &project, nil
+	return err
 }
 
 func (p *projectRepo) UpdateProject(project *model.Project) error {
@@ -128,31 +137,20 @@ func (p *projectRepo) UpdateProject(project *model.Project) error {
 	return err
 }
 
-func (p *projectRepo) DeleteProject(projectID int) error {
+func (p *projectRepo) DeleteProjectByKey(key string) error {
 
 	_, err := p.dbCon.Exec(
-		`DELETE FROM projects WHERE id=$1`,
-		projectID,
+		`DELETE FROM projects WHERE key=$1`,
+		key,
 	)
 
 	return err
-}
-
-func (p *projectRepo) ListProjects() ([]model.Project, error) {
-	var projects []model.Project
-
-	err := p.dbCon.Select(&projects, `SELECT * FROM projects`)
-	return projects, err
 }
 
 func (p *projectRepo) ListProjectsByOwner(ownerID int) ([]model.Project, error) {
 	var projects []model.Project
 
 	err := p.dbCon.Select(&projects, `SELECT * FROM projects WHERE owner_id=$1`, ownerID)
-	if len(projects) == 0 {
-		return nil, fmt.Errorf("owner %d has no projects", ownerID)
-	}
-
 	return projects, err
 }
 
@@ -199,4 +197,24 @@ func (p *projectRepo) ListProjectsWhereUserIsMember(userID int) ([]model.Project
 
 	err := p.dbCon.Select(&projects, query, userID)
 	return projects, err
+}
+
+// to get sequence
+func (r *projectRepo) GetNextProjectSequenceTx(tx *sqlx.Tx, prefix string) (int, error) {
+	var seq int
+
+	query := `
+		INSERT INTO project_counters (prefix, current_value)
+		VALUES ($1, 1)
+		ON CONFLICT (prefix)
+		DO UPDATE SET current_value = project_counters.current_value + 1
+		RETURNING current_value;
+	`
+
+	err := tx.QueryRow(query, prefix).Scan(&seq)
+	if err != nil {
+		return 0, err
+	}
+
+	return seq, nil
 }

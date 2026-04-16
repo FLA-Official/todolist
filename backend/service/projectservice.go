@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"todolist/model"
 	"todolist/repo"
 	"todolist/utils"
@@ -30,43 +31,87 @@ func (s *ProjectService) CreateProject(ctx context.Context, project *model.Proje
 
 	project.OwnerID = userID
 
-	err := s.projectRepo.CreateProject(project)
+	// Start transaction
+	tx, err := s.projectRepo.BeginTx()
 	if err != nil {
-		logger.Error("failed to create project", "user_id", userID)
+		logger.Error("failed to start transaction", "error", err)
 		return err
 	}
 
-	logger.Info("project created", "project_id", project.ID, "user_id", userID)
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+	}()
 
-	member := &model.ProjectMember{
-		ProjectID: project.ID,
-		UserID:    userID,
-		Role:      model.RoleOwner,
+	// 1. Generate prefix from project name in service layer
+	prefix := utils.GeneratePrefix(project.Name)
+	project.Prefix = &prefix
+
+	// 2. Get next sequence (atomic)
+	seq, err := s.projectRepo.GetNextProjectSequenceTx(tx, prefix)
+	if err != nil {
+		logger.Error("failed to get project sequence", "error", err)
+		tx.Rollback()
+		return err
+	}
+	project.Sequence = &seq
+
+	// 3. Build final key
+	finalKey := fmt.Sprintf("%s-%d", prefix, seq)
+	project.Key = finalKey
+
+	// 4. Store project
+	err = s.projectRepo.CreateProjectTx(tx, project)
+	if err != nil {
+		logger.Error("failed to create project", "user_id", userID, "error", err)
+		tx.Rollback()
+		return err
 	}
 
-	return s.memberRepo.AddMember(member)
+	// 5. Commit
+	if err = tx.Commit(); err != nil {
+		logger.Error("failed to commit transaction", "error", err)
+		return err
+	}
+
+	logger.Info("project created",
+		"project_id", project.ID,
+		"key", project.Key,
+		"user_id", userID,
+	)
+
+	return nil
 }
-func (s *ProjectService) GetProject(ctx context.Context, projectID, userID int) (*model.Project, error) {
+func (s *ProjectService) GetProjectByKey(ctx context.Context, key string, userID int) (*model.Project, error) {
 
 	logger := utils.LoggerFromContext(ctx)
 
-	role, err := s.memberRepo.GetUserRole(projectID, userID)
+	// Get project by key
+	project, err := s.projectRepo.GetProjectByKey(key)
 	if err != nil {
-		logger.Error("access denied", "project_id", projectID, "user_id", userID)
+		logger.Error("project not found", "key", key)
+		return nil, errors.New("project not found")
+	}
+
+	// Check if user has access to this projects
+	role, err := s.memberRepo.GetUserRole(project.Key, userID)
+	if err != nil {
+		logger.Error("access denied", "project_key", key, "user_id", userID)
 		return nil, errors.New("no access to this project")
 	}
 
 	if role == "" {
-		logger.Error("not a member", "project_id", projectID, "user_id", userID)
+		logger.Error("not a member", "project_key", key, "user_id", userID)
 		return nil, errors.New("not a member")
 	}
 
-	return s.projectRepo.GetProjectByID(projectID)
+	return project, nil
 }
 
 func (s *ProjectService) UpdateProject(project *model.Project, userID int) error {
 
-	role, err := s.memberRepo.GetUserRole(project.ID, userID)
+	role, err := s.memberRepo.GetUserRole(project.Key, userID)
 	if err != nil {
 		return err
 	}
@@ -78,31 +123,63 @@ func (s *ProjectService) UpdateProject(project *model.Project, userID int) error
 	return s.projectRepo.UpdateProject(project)
 }
 
-func (s *ProjectService) DeleteProject(projectID, userID int) error {
+func (s *ProjectService) DeleteProjectByKey(ctx context.Context, key string, userID int) error {
 
-	isOwner, err := s.IsOwner(projectID, userID)
+	project, err := s.projectRepo.GetProjectByKey(key)
 	if err != nil {
 		return err
 	}
 
-	if !isOwner {
+	if project.OwnerID != userID {
 		return errors.New("only owner can delete project")
 	}
 
-	return s.projectRepo.DeleteProject(projectID)
+	return s.projectRepo.DeleteProjectByKey(key)
 }
 
 func (s *ProjectService) ListUserProjects(userID int) ([]model.Project, error) {
+	// Get all projects where user is owner, admin, or member
+	var allProjects []model.Project
+	// Get owned projects
+	owned, err := s.projectRepo.ListProjectsByOwner(userID)
+	if err != nil {
+		// If no owned projects, continue
+		owned = []model.Project{}
+	}
 
-	return s.projectRepo.ListProjectsByOwner(userID)
-}
+	// Get projects where user is admin
+	admin, err := s.projectRepo.ListProjectsWhereUserIsAdmin(userID)
+	if err != nil {
+		admin = []model.Project{}
+	}
 
-func (s *ProjectService) ListUserProjectsAsAdmin(userID int) ([]model.Project, error) {
-	return s.projectRepo.ListProjectsWhereUserIsAdmin(userID)
-}
+	// Get projects where user is member
+	member, err := s.projectRepo.ListProjectsWhereUserIsMember(userID)
+	if err != nil {
+		member = []model.Project{}
+	}
 
-func (s *ProjectService) ListUserProjectAsMember(userID int) ([]model.Project, error) {
-	return s.projectRepo.ListProjectsWhereUserIsMember(userID)
+	// Combine all projects and remove duplicates
+	projectMap := make(map[int]model.Project)
+	for _, p := range owned {
+		projectMap[p.ID] = p
+	}
+	for _, p := range admin {
+		projectMap[p.ID] = p
+	}
+	for _, p := range member {
+		projectMap[p.ID] = p
+	}
+
+	for _, p := range projectMap {
+		allProjects = append(allProjects, p)
+	}
+
+	if len(allProjects) == 0 {
+		return nil, fmt.Errorf("user %d has no projects", userID)
+	}
+
+	return allProjects, nil
 }
 
 func (s *ProjectService) IsOwner(projectID, userID int) (bool, error) {

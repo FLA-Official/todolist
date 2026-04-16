@@ -3,7 +3,6 @@ package projectMemberHandler
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 	"todolist/model"
 	"todolist/utils"
 )
@@ -21,10 +20,16 @@ func (h *Handler) AddMemberHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	projectIDStr := r.PathValue("projectId")
-	projectID, err := strconv.Atoi(projectIDStr)
+	projectKey := r.PathValue("projectkey")
+	if projectKey == "" {
+		http.Error(w, "Invalid project key", http.StatusBadRequest)
+		return
+	}
+
+	// Get project by key to verify access and get ID
+	project, err := h.projectService.GetProjectByKey(r.Context(), projectKey, user.ID)
 	if err != nil {
-		http.Error(w, "invalid projectId", http.StatusBadRequest)
+		http.Error(w, "Project not found or access denied", http.StatusNotFound)
 		return
 	}
 
@@ -34,7 +39,7 @@ func (h *Handler) AddMemberHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	member := &model.ProjectMember{
-		ProjectID: projectID,
+		ProjectID: project.ID,
 		UserID:    input.UserID,
 		Role:      input.Role,
 	}
